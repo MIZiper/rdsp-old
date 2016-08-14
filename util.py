@@ -1,24 +1,4 @@
 """
-    Read/Parse Mat file
-"""
-def extractMatFile(filename):
-    from scipy.io import loadmat
-    mat = loadmat(filename)
-    i = 1
-    tracks = []
-    while ('Track%d' % i) in mat.keys():
-        tracks.append({
-            'name':mat['Track%d_Name' % i][0]
-        })
-        i += 1
-    signalTracks = {
-        'date':mat['RecordDate'][0],
-        'length':mat['RecordLength'][0,0],
-        'tracks':tracks
-    }
-    return signalTracks
-
-"""
     Read/Parse/Save Proj file
 """
 class ProjectManager():
@@ -29,9 +9,29 @@ class ProjectManager():
     def registerListWidget(self, listWidget):
         self.listWidget.append(listWidget)
 
-    def addNewMat(self, fname):
+    def addNewMat(self, guid, name, matpath):
         from default import SignalModule
-        signal = SignalModule()
+        from scipy.io import loadmat
+        import uuid
+
+        mat = loadmat(matpath)
+        i = 1
+        tracks = []
+
+        while ('Track%d' % i) in mat.keys():
+            tracks.append({
+                'guid':str(uuid.uuid4()),
+                'name':mat['Track%d_Name' % i][0]
+            })
+            i += 1
+
+        signal = SignalModule(guid, name, self)
+        signal.fillProperties({
+            'date':mat['RecordDate'][0],
+            'length':mat['RecordLength'][0,0]
+        })
+        signal.fillTracks(tracks)
+        
         for lw in self.listWidget:
             lw.addNewSignal(signal)
 

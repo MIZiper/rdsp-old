@@ -16,23 +16,16 @@ PROJPATH = ''
 SOURCEDIR = 'source/'
 SETTING = 'project.json'
 
+import gl
+
 class ListWidgetBase(QTreeWidget):
-    def __init__(self, parent, moduleManager):
+    def __init__(self, parent):
         QTreeWidget.__init__(self, parent)
-        self.moduleManager = moduleManager
         self.setHeaderLabels(("Type", "Name"))
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.contextMenu)
 
-        self.data = {}
-
-    def setData(self, data):
-        self.clear()
-        for i in data:
-            if i['type'] == 'SignalFile':
-                self.parseNode(self, i)
-
-    def parseNode(self, parent, node):
+    def appendNode(self, parent, node):
         item = QTreeWidgetItem(parent)
         item.setText(0, node['type'])
         item.setText(1, node['name'])
@@ -40,18 +33,26 @@ class ListWidgetBase(QTreeWidget):
         item.setData(0, 34, node['object']) # 34 user-role for object
         if 'sub' in node.keys():
             for subNode in node['sub']:
-                self.parseNode(item, subNode)
+                self.appendNode(item, subNode)
     
     def contextMenu(self, position):
         items = self.selectedItems()
         if len(items) > 0:
             moduleClassName = items[0].data(0, 33)
             boundObject = items[0].data(0, 34)
-            moduleClass = self.moduleManager.getModule(moduleClassName)
+            moduleClass = gl.moduleManager.getModule(moduleClassName)
             if moduleClass:
                 menu = QMenu()
                 import functools
-                actions = (create_action(menu, action['title'], triggered=functools.partial(getattr(moduleClass,action['action']),boundObject,self)) for action in moduleClass.ContextMenu)
+                actions = (
+                    create_action(
+                        menu, action['title'],
+                        triggered=functools.partial(
+                            getattr(moduleClass,action['action']),
+                            boundObject
+                        )
+                    ) for action in moduleClass.ContextMenu
+                )
                 add_actions(menu, actions)
                 menu.exec_(self.viewport().mapToGlobal(position))
 
@@ -59,33 +60,41 @@ class ListWidgetBase(QTreeWidget):
         raise NotImplementedError
 
 class ListProjectWidget(ListWidgetBase):
-    def __init__(self, parent, moduleManager):
-        ListWidgetBase.__init__(self, parent, moduleManager)
+    def __init__(self, parent):
+        ListWidgetBase.__init__(self, parent)
 
     def addNewSignal(self, signal):
-        newData = {"type":"SignalFile", "name":fname, "object":None, "sub":[]}
-        self.parseNode(self, newData)
+        node = {
+            'type':signal.ModuleName,
+            'name':signal.name,
+            'object':signal,
+            'sub':[
+                process.getConfig() for process in signal.process
+            ]
+        }
+        self.appendNode(self, node)
 
 class ListTrackWidget(ListWidgetBase):
-    def __init__(self, parent, moduleManager):
-        ListWidgetBase.__init__(self, parent, moduleManager)
+    def __init__(self, parent):
+        ListWidgetBase.__init__(self, parent)
 
     def addNewSignal(self, signal):
+        node = {
+            'type':signal.ModuleName,
+            'name':signal.name,
+            'object':signal,
+            'sub':[
+                track.getConfig() for track in signal.tracks
+            ]
+        }
         # change the type so as to drop "new process", but a new module class required
-        from util import extractMatFile
-        signalTracks = extractMatFile(path.join(PROJPATH,SOURCEDIR,fname))
-        newData = {"type":"SignalFile", "name":fname, "object":None, "sub":[
-            {"type":"Track", "name":track['name'], "object":None} for track in signalTracks['tracks']
-        ]}
-        self.data[fname] = newData
-        
-        self.parseNode(self, newData)
+        self.appendNode(self, node)
 
 class MainWindow(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
-        self.moduleManager = ModuleManager()
-        self.projectManager = ProjectManager()
+        gl.moduleManager = ModuleManager()
+        gl.projectManager = ProjectManager()
 
         self.initUi()
         self.loadModule()
@@ -117,8 +126,8 @@ class MainWindow(QMainWindow):
         #
         side_layout = QGridLayout(side_widget)
         tab_list_widget = QTabWidget(side_widget)
-        self.proj_list = ListProjectWidget(tab_list_widget, self.moduleManager)
-        self.track_list = ListTrackWidget(tab_list_widget, self.moduleManager)
+        self.proj_list = ListProjectWidget(tab_list_widget)
+        self.track_list = ListTrackWidget(tab_list_widget)
         tab_list_widget.addTab(self.proj_list, 'Project')
         tab_list_widget.addTab(self.track_list, 'Track')
         side_layout.addWidget(tab_list_widget, 0, 0)
@@ -138,37 +147,12 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(main_widget)
 
     def loadModule(self):
-        from default import SignalFileModule, TrackModule
-        self.moduleManager.registerModule(SignalFileModule)
-        self.moduleManager.registerModule(TrackModule)
-        
+        from default import SignalModule, TrackModule
+        gl.moduleManager.registerModule(SignalModule)
+        gl.moduleManager.registerModule(TrackModule)
 
-    def test(self):
-        # from module.AirGap.implementation import AirGapParam
-        # o = AirGapParam(title="NNNN")
-        # o.edit(self)
-        data = [
-            {
-                "type":"SignalFile", "name":"measurement-1.mat", "object":"nnn",
-                "sub":[
-                    {
-                        "type":"AirGap", "name":"nde", "object":None,
-                        "sub":[]
-                    },{
-                        "type":"FFT", "name":"vib",  "object":None,
-                        "sub":[
-                            {
-                                "type":"Track", "name":"velocity", "object":None
-                            }
-                        ]
-                    }
-                ]
-            },{
-                "type":"SignalFile", "name":"measurement-2.mat", "object":None,
-                "sub":[]
-            }
-        ]
-        self.proj_list.setData(data)
+        gl.projectManager.registerListWidget(self.proj_list)
+        gl.projectManager.registerListWidget(self.track_list)
 
     def import_mat(self):
         if not PROJPATH:
@@ -180,14 +164,14 @@ class MainWindow(QMainWindow):
             return
 
         self.statusBar().showMessage("Copying Matlab file ...")
-        # fname = path.basename(filename)
-        fname = str(uuid.uuid4()) + '.mat'
-        # make a guid and ..
-        QFile.copy(filename, path.join(PROJPATH,SOURCEDIR,fname))
+        fname = path.basename(filename)
+        guid = str(uuid.uuid4())
+        matpath = path.join(PROJPATH,SOURCEDIR,guid+'.mat')
+        QFile.copy(filename, matpath)
         self.statusBar().showMessage("Copy done, parsing ...")
         # self.proj_list.addNewMat(fname)
         # self.track_list.addNewMat(fname)
-        self.projectManager.addNewMat(fname)
+        gl.projectManager.addNewMat(guid, fname, matpath)
         self.statusBar().showMessage("Done!", 3000)
 
     def open_project(self):
@@ -210,6 +194,7 @@ class MainWindow(QMainWindow):
         pass
 
     def new_project(self):
+        global PROJPATH
         if PROJPATH:
             # prompt to save project
             pass
@@ -217,6 +202,9 @@ class MainWindow(QMainWindow):
         prjfolder = QFileDialog.getExistingDirectory(self, 'Select a Folder')
         if not prjfolder:
             return
+
+        PROJPATH = prjfolder
+        # create sub folders: source & result
 
     def quit(self):
         # make sure the project is saved

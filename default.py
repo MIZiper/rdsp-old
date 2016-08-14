@@ -2,6 +2,8 @@
     default/embeded module for common use
 """
 
+import gl
+
 class SignalModule():
     ModuleName = 'Signal'
     ContextMenu = [
@@ -10,14 +12,20 @@ class SignalModule():
         {'title':'Delete', 'action':'delete'}
     ]
 
-    def __init__(self):
+    def __init__(self, guid, name, parent):
         self.guid = guid
         self.name = name
+        self.parent = parent
         self.tracks = []
         self.process = []
 
-    def fillTracks(self):
+    def fillProperties(self, propDict):
         pass
+
+    def fillTracks(self, tracks):
+        for track in tracks:
+            t = TrackModule(track['guid'], track['name'], self)
+            self.tracks.append(t)
 
     def loadTracks(self, trackData):
         pass
@@ -25,20 +33,33 @@ class SignalModule():
     def loadProcess(self, processData):
         pass
     
+# custom part over, interface part start
+
     def configWin(self):
         from guidata.qt.QtGui import QInputDialog
         a, ok = QInputDialog.getInteger(None,"G","H")
         return ok
     
-    def delete(self, l):
+    def getConfig(self):
+        return {
+            'type':'Signal',
+            'name':self.name,
+            'object':self,
+            'tracks':[],
+            'process':[]
+        }
+
+# interface part over, event part start
+
+    def delete(self):
         pass
 
-    def newProcess(self, l):
-        modulesName = l.moduleManager.getModulesName()
+    def newProcess(self):
+        modulesName = gl.moduleManager.getModulesName()
         from guidata.qt.QtGui import QInputDialog
-        item, ok = QInputDialog.getItem(l,'Select a Module','Module:',modulesName,editable=False)
+        item, ok = QInputDialog.getItem(None,'Select a Module','Module:',modulesName,editable=False)
         if ok and item:
-            moduleClass = l.moduleManager.getModule(item)
+            moduleClass = gl.moduleManager.getModule(item)
             o = moduleClass()
             if o.configWin():
                 pass # store this object to list
@@ -55,8 +76,25 @@ class TrackModule():
         # ,{'title':'Detailed Display', 'action':'detailedDisplay'}
     ]
 
-    def __init__(self):
+    def __init__(self, guid, name, parent):
+        self.guid = guid
+        self.name = name
+        self.parent = parent
+        self.data = None
+
+    def fillProperties(self, propDict):
         pass
+
+# custom part over, interface part start
+
+    def getConfig(self):
+        return {
+            'type':'Track',
+            'name':self.name,
+            'object':self
+        }
+
+# interface part over, event part start
 
     def displayOverride(self):
         pass

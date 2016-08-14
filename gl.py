@@ -1,0 +1,2 @@
+moduleManager = None
+projectManager = None
