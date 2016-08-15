@@ -24,8 +24,8 @@ class AirGapModule():
     def __init__(self):
         self.ModuleObjectName = "the specified name for treatment"
     
-    def configWindow():
-        pass
+    def configWindow(self):
+        print("show me!")
 
     def listPackage():
         pass
@@ -39,8 +39,7 @@ class AirGapModule():
     def genConfig():
         pass
 
-    def processNow(self):
-        pass
+# interface part over, event part start
 
     def processNow(self):
         pass

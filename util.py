@@ -31,10 +31,27 @@ class ProjectManager():
             'length':mat['RecordLength'][0,0]
         })
         signal.fillTracks(tracks)
+        self.signals.append(signal)
         
         for lw in self.listWidget:
             lw.addNewSignal(signal)
 
+    def initConfig(self, data):
+        from default import SignalModule
+        for lw in self.listWidget:
+            lw.clear()
+
+        self.signals.clear()
+        for dt in data:
+            signal = SignalModule(dt['guid'],dt['name'],self)
+            signal.fillTracks(dt['tracks'])
+            # signal.fillProperties
+            self.signals.append(signal)
+            for lw in self.listWidget:
+                lw.addNewSignal(signal)
+
+    def getConfig(self):
+        return [ signal.getConfig(False) for signal in self.signals]
 """
     Search modules and register
 """
@@ -70,4 +87,4 @@ class ModuleManager():
             return self.getModule(moduleName)
     
     def getModulesName(self):
-        return [name for name in self.modulesName]# if name!='SignalFile' and name!='Track']
+        return [name for name in self.modulesName if name!='Signal' and name!='Track'] #]#

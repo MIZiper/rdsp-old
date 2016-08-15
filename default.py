@@ -35,19 +35,27 @@ class SignalModule():
     
 # custom part over, interface part start
 
-    def configWin(self):
+    def configWindow(self):
         from guidata.qt.QtGui import QInputDialog
         a, ok = QInputDialog.getInteger(None,"G","H")
         return ok
     
-    def getConfig(self):
-        return {
+    def getConfig(self, WithObject=True):
+        cfg = {
             'type':'Signal',
+            'guid':self.guid,
             'name':self.name,
             'object':self,
-            'tracks':[],
-            'process':[]
+            'tracks':[
+                track.getConfig(WithObject) for track in self.tracks
+            ],
+            'process':[
+                process.getConfig(WithObject) for process in self.process
+            ]
         }
+        if not WithObject:
+            del cfg['object']
+        return cfg
 
 # interface part over, event part start
 
@@ -61,7 +69,7 @@ class SignalModule():
         if ok and item:
             moduleClass = gl.moduleManager.getModule(item)
             o = moduleClass()
-            if o.configWin():
+            if o.configWindow():
                 pass # store this object to list
 
         # a dialog list
@@ -87,12 +95,16 @@ class TrackModule():
 
 # custom part over, interface part start
 
-    def getConfig(self):
-        return {
+    def getConfig(self, WithObject=True):
+        cfg = {
             'type':'Track',
+            'guid':self.guid,
             'name':self.name,
             'object':self
         }
+        if not WithObject:
+            del cfg['object']
+        return cfg
 
 # interface part over, event part start
 

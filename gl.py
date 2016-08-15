@@ -1,2 +1,4 @@
-moduleManager = None
-projectManager = None
+from util import ModuleManager, ProjectManager
+
+moduleManager = ModuleManager()
+projectManager = ProjectManager()

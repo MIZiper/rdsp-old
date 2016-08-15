@@ -6,15 +6,16 @@ from guidata.qt.QtCore import QFile
 from guidata.qthelpers import (create_action, add_actions)
 from guidata.qthelpers import Qt
 
-from os import path 
-import uuid
+from os import path, mkdir
+import uuid, json
 
 from util import ModuleManager, ProjectManager
 
 APPNAME = "RDSP"
 PROJPATH = ''
 SOURCEDIR = 'source/'
-SETTING = 'project.json'
+RESULTDIR = 'result/'
+CONFIG = 'project.json'
 
 import gl
 
@@ -159,7 +160,7 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, APPNAME, 'Open a project first or create a new one.')
             return
 
-        filename = QFileDialog.getOpenFileName(self, "Import Mat File", filter='Matlab File (*.mat)')
+        filename = QFileDialog.getOpenFileName(self, "Import Mat File", filter='Matlab File (*.mat)', directory=PROJPATH)
         if not filename:
             return
 
@@ -175,7 +176,7 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("Done!", 3000)
 
     def open_project(self):
-        filename = QFileDialog.getOpenFileName(self, "Open Project File", filter='JSON File (*.json) \n All (*.*)')
+        filename = QFileDialog.getOpenFileName(self, "Open Project File", filter='JSON File (*.json);;All (*.*)', directory=PROJPATH)
         if not filename:
             return
 
@@ -185,13 +186,19 @@ class MainWindow(QMainWindow):
                 "Cannot open file %s:\n%s." % (filename, filehandle.errorString()))
             return
         
-        # if self.project.read(filehandle):
-        #     # clear/init qtree
-        #     # self.projlist = self.project.widget
-        #     pass
+        global PROJPATH, CONFIG
+        PROJPATH = path.dirname(filename)
+        CONFIG = path.basename(filename)
+        with open(filename) as fp:
+            data = json.load(fp)
+
+        gl.projectManager.initConfig(data)
 
     def save_project(self):
-        pass
+        if PROJPATH:
+            filename = path.join(PROJPATH,CONFIG)
+            with open(filename, mode='w') as fp:
+                json.dump(gl.projectManager.getConfig(),fp, indent=4)
 
     def new_project(self):
         global PROJPATH
@@ -199,15 +206,18 @@ class MainWindow(QMainWindow):
             # prompt to save project
             pass
 
-        prjfolder = QFileDialog.getExistingDirectory(self, 'Select a Folder')
+        prjfolder = QFileDialog.getExistingDirectory(self, 'Select a Folder', directory=PROJPATH)
         if not prjfolder:
             return
 
         PROJPATH = prjfolder
-        # create sub folders: source & result
+        try:
+            mkdir(path.join(PROJPATH,SOURCEDIR))
+            mkdir(path.join(PROJPATH,RESULTDIR))
+        except:
+            pass
 
     def quit(self):
-        # make sure the project is saved
         self.close()
 
     def about(self):
