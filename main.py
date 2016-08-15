@@ -98,7 +98,7 @@ class MainWindow(QMainWindow):
         gl.projectManager = ProjectManager()
 
         self.initUi()
-        self.loadModule()
+        # self.loadModule()
 
     def initUi(self):
         self.setWindowTitle(APPNAME)
@@ -155,6 +155,21 @@ class MainWindow(QMainWindow):
         gl.projectManager.registerListWidget(self.proj_list)
         gl.projectManager.registerListWidget(self.track_list)
 
+        self.statusBar().showMessage("Loading modules ...")
+        import os, importlib
+        dirs = os.listdir('module')
+        # judge if it is dir
+        for dir in dirs:
+            modulePath = 'module.%s.implementation' % dir
+            module = getattr(importlib.import_module(modulePath),'%sModule' % dir)
+            gl.moduleManager.registerModule(module)
+            # # the way should be like:
+            # mod = __import__(dir, 'module')
+            # gl.moduleManager.registerModule(mod)
+            # # an __init__.py in dir should handle and export the moduleClass
+            # # but don't know how to
+        self.statusBar().showMessage("Done!", 3000)
+
     def import_mat(self):
         if not PROJPATH:
             QMessageBox.warning(self, APPNAME, 'Open a project first or create a new one.')
@@ -176,6 +191,7 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("Done!", 3000)
 
     def open_project(self):
+        global PROJPATH, CONFIG
         filename = QFileDialog.getOpenFileName(self, "Open Project File", filter='JSON File (*.json);;All (*.*)', directory=PROJPATH)
         if not filename:
             return
@@ -186,7 +202,6 @@ class MainWindow(QMainWindow):
                 "Cannot open file %s:\n%s." % (filename, filehandle.errorString()))
             return
         
-        global PROJPATH, CONFIG
         PROJPATH = path.dirname(filename)
         CONFIG = path.basename(filename)
         with open(filename) as fp:
@@ -237,4 +252,5 @@ if __name__ == "__main__":
     app = qapplication()
     win = MainWindow()
     win.show()
+    win.loadModule()
     app.exec_()
