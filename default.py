@@ -60,7 +60,9 @@ class SignalModule():
 # interface part over, event part start
 
     def delete(self):
-        pass
+        gl.projectManager.delSignal(self)
+        # clean the tracks & process
+        # delete process' result file meanwhile
 
     def newProcess(self):
         modulesName = gl.moduleManager.getModulesName()

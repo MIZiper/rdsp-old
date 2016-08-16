@@ -95,7 +95,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
         gl.moduleManager = ModuleManager()
-        gl.projectManager = ProjectManager()
+        gl.projectManager = ProjectManager(self)
 
         self.initUi()
         # self.loadModule()
@@ -189,6 +189,11 @@ class MainWindow(QMainWindow):
         # self.track_list.addNewMat(fname)
         gl.projectManager.addNewMat(guid, fname, matpath)
         self.statusBar().showMessage("Done!", 3000)
+
+    def delMat(self, guid):
+        # prompt confirm
+        QFile.remove(path.join(PROJPATH,SOURCEDIR,guid+'.mat'))
+        # force save project, since file won't exist
 
     def open_project(self):
         global PROJPATH, CONFIG

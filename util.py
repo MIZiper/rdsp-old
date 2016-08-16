@@ -2,9 +2,10 @@
     Read/Parse/Save Proj file
 """
 class ProjectManager():
-    def __init__(self):
+    def __init__(self, parent=None):
         self.signals = []
         self.listWidget = []
+        self.parent = parent
 
     def registerListWidget(self, listWidget):
         self.listWidget.append(listWidget)
@@ -35,6 +36,12 @@ class ProjectManager():
         
         for lw in self.listWidget:
             lw.addNewSignal(signal)
+
+    def delSignal(self, signal):
+        if self.parent:
+            self.parent.delMat(signal.guid)
+        self.signals.remove(signal)
+        self.refreshListWidget()
 
     def initConfig(self, data):
         from default import SignalModule
