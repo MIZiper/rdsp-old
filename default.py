@@ -42,7 +42,7 @@ class SignalModule():
     
     def getConfig(self, WithObject=True):
         cfg = {
-            'type':'Signal',
+            'type':self.ModuleName,
             'guid':self.guid,
             'name':self.name,
             'object':self,
@@ -70,10 +70,8 @@ class SignalModule():
             moduleClass = gl.moduleManager.getModule(item)
             o = moduleClass()
             if o.configWindow():
-                pass # store this object to list
-
-        # a dialog list
-        # if yes
+                self.process.append(o)
+                gl.projectManager.refreshListWidget()
 
 class TrackModule():
     ModuleName = 'Track'
@@ -97,7 +95,7 @@ class TrackModule():
 
     def getConfig(self, WithObject=True):
         cfg = {
-            'type':'Track',
+            'type':self.ModuleName,
             'guid':self.guid,
             'name':self.name,
             'object':self

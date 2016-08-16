@@ -22,10 +22,14 @@ class AirGapModule():
         {'title':'Delete', 'action':'deleteProcess'}
     ]
     def __init__(self):
-        self.ModuleObjectName = "the specified name for treatment"
+        self.name = ''
+        self.guid = ''
+        self.parent = None
+        self.tracks = []
     
     def configWindow(self):
-        print("show me!")
+        # self-made dialog, the config Window
+        return True
 
     def listPackage():
         pass
@@ -36,8 +40,17 @@ class AirGapModule():
     def parseConfig():
         pass
 
-    def genConfig():
-        pass
+    def getConfig(self, WithObject=True):
+        cfg = {
+            'type':self.ModuleName,
+            'guid':self.guid,
+            'name':self.name,
+            'object':self,
+            'sub':[] # self.parent.getTracks().getConfig()
+        }
+        if not WithObject:
+            del cfg['object']
+        return cfg
 
 # interface part over, event part start
 

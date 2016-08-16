@@ -232,6 +232,8 @@ class MainWindow(QMainWindow):
         except:
             pass
 
+        gl.projectManager.initConfig([])
+
     def quit(self):
         self.close()
 

@@ -38,16 +38,20 @@ class ProjectManager():
 
     def initConfig(self, data):
         from default import SignalModule
-        for lw in self.listWidget:
-            lw.clear()
-
         self.signals.clear()
+
         for dt in data:
             signal = SignalModule(dt['guid'],dt['name'],self)
             signal.fillTracks(dt['tracks'])
             # signal.fillProperties
             self.signals.append(signal)
-            for lw in self.listWidget:
+            
+        self.refreshListWidget()
+
+    def refreshListWidget(self):
+        for lw in self.listWidget:
+            lw.clear()
+            for signal in self.signals:
                 lw.addNewSignal(signal)
 
     def getConfig(self):
