@@ -33,12 +33,16 @@ class SignalModule():
     def loadProcess(self, processData):
         pass
     
+    def getTracksList(self):
+        return [{'name':track.name,'guid':track.guid} for track in self.tracks]
+
+    def getTrack(self, guid):
+        pass
+    
 # custom part over, interface part start
 
     def configWindow(self):
-        from guidata.qt.QtGui import QInputDialog
-        a, ok = QInputDialog.getInteger(None,"G","H")
-        return ok
+        pass
     
     def getConfig(self, WithObject=True):
         cfg = {
@@ -70,7 +74,7 @@ class SignalModule():
         item, ok = QInputDialog.getItem(None,'Select a Module','Module:',modulesName,editable=False)
         if ok and item:
             moduleClass = gl.moduleManager.getModule(item)
-            o = moduleClass()
+            o = moduleClass(self)
             if o.configWindow():
                 self.process.append(o)
                 gl.projectManager.refreshListWidget()
