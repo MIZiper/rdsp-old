@@ -1,8 +1,8 @@
 from guidata.qt.QtGui import (QMainWindow, QHBoxLayout, QTabWidget, QTreeWidget,
     QVBoxLayout, QListWidget, QSplitter, QVBoxLayout, QWidget,
     QFileDialog ,QMessageBox, QTreeWidgetItem, QMenu,
-    QGridLayout)
-from guidata.qt.QtCore import QFile
+    QGridLayout, QApplication)
+from guidata.qt.QtCore import QFile, QSettings
 from guidata.qthelpers import (create_action, add_actions)
 from guidata.qthelpers import Qt
 
@@ -97,6 +97,7 @@ class MainWindow(QMainWindow):
         gl.moduleManager = ModuleManager()
         gl.projectManager = ProjectManager(self)
 
+        self.recentSetting = QSettings("AHC","rdsp")
         self.initUi()
         # self.loadModule()
 
@@ -175,12 +176,14 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, APPNAME, 'Open a project first or create a new one.')
             return
 
-        filename = QFileDialog.getOpenFileName(self, "Import Mat File", filter='Matlab File (*.mat)', directory=PROJPATH)
+        filename = QFileDialog.getOpenFileName(self, "Import Mat File", filter='Matlab File (*.mat)', directory=self.recentSetting.value('recentMat',''))
         if not filename:
             return
 
         self.statusBar().showMessage("Copying Matlab file ...")
+        QApplication.setOverrideCursor(Qt.WaitCursor)
         fname = path.basename(filename)
+        self.recentSetting.setValue('recentMat',path.dirname(filename))
         guid = str(uuid.uuid4())
         matpath = path.join(PROJPATH,SOURCEDIR,guid+'.mat')
         QFile.copy(filename, matpath)
@@ -189,6 +192,7 @@ class MainWindow(QMainWindow):
         # self.track_list.addNewMat(fname)
         gl.projectManager.addNewMat(guid, fname, matpath)
         self.statusBar().showMessage("Done!", 3000)
+        QApplication.restoreOverrideCursor()
 
     def delMat(self, guid):
         # prompt confirm
@@ -197,7 +201,7 @@ class MainWindow(QMainWindow):
 
     def open_project(self):
         global PROJPATH, CONFIG
-        filename = QFileDialog.getOpenFileName(self, "Open Project File", filter='JSON File (*.json);;All (*.*)', directory=PROJPATH)
+        filename = QFileDialog.getOpenFileName(self, "Open Project File", filter='JSON File (*.json);;All (*.*)', directory=self.recentSetting.value('recentProj',''))
         if not filename:
             return
 
@@ -208,6 +212,7 @@ class MainWindow(QMainWindow):
             return
         
         PROJPATH = path.dirname(filename)
+        self.recentSetting.setValue('recentProj',PROJPATH)
         CONFIG = path.basename(filename)
         with open(filename) as fp:
             data = json.load(fp)
@@ -226,11 +231,12 @@ class MainWindow(QMainWindow):
             # prompt to save project
             pass
 
-        prjfolder = QFileDialog.getExistingDirectory(self, 'Select a Folder', directory=PROJPATH)
+        prjfolder = QFileDialog.getExistingDirectory(self, 'Select a Folder', directory=self.recentSetting.value('recentProj',''))
         if not prjfolder:
             return
 
         PROJPATH = prjfolder
+        self.recentSetting.setValue('recentProj',PROJPATH)
         try:
             mkdir(path.join(PROJPATH,SOURCEDIR))
             mkdir(path.join(PROJPATH,RESULTDIR))
