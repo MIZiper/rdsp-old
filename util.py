@@ -50,6 +50,7 @@ class ProjectManager():
         for dt in data:
             signal = SignalModule(dt['guid'],dt['name'],self)
             signal.fillTracks(dt['tracks'])
+            signal.fillProcess(dt['process'])
             # signal.fillProperties
             self.signals.append(signal)
             

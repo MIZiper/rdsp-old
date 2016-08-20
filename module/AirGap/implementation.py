@@ -95,7 +95,10 @@ class AirGapModule():
         pass
 
     def setConfig(self):
-        pass
+        cfg = self.getConfig(False)
+        cfg['trackSrc'] = self.parent.getTracksList()
+        if self.configWindow(cfg):
+            self.parent.refresh()
 
     def showResult(self):
         pass
@@ -151,6 +154,11 @@ class AirGapConfig(QtGui.QDialog):
         cmbTracks = QtGui.QComboBox()
         tracks = [track['name'] for track in self.config['trackSrc']]
         cmbTracks.addItems(tracks)
+        if config['keyPhasor']:
+            for i in range(len(tracks)):
+                if self.config['trackSrc'][i]['guid']==config['keyPhasor']:
+                    cmbTracks.setCurrentIndex(i)
+                    break
 
         btnTrack = QtGui.QCommandLinkButton('Add Track')
         btnTrack.clicked.connect(self.addTrack)
@@ -170,6 +178,10 @@ class AirGapConfig(QtGui.QDialog):
         tracksTable = QtGui.QTableWidget(0,3)
         tracksTable.setHorizontalHeaderLabels(['Track Name','Thickness','Angel'])        
         tracksTable.verticalHeader().sectionDoubleClicked.connect(self.removeTrack)
+        self.tracks_table = tracksTable
+        if config['trackSet']:
+            for i in range(len(config['trackSet'])):
+                self.addTrack(config['trackSet'][i])
 
         mainLayout = QtGui.QHBoxLayout()
         mainLayout.addLayout(sideLayout)
@@ -179,14 +191,13 @@ class AirGapConfig(QtGui.QDialog):
         layoutMain.addWidget(buttonBox)
         self.setLayout(layoutMain)
 
-        self.tracks_table = tracksTable
         self.name_txt = txtName
         self.rotCw_rdo = rdoRotCw
         self.numCw_rdo = rdoNumCw
         self.numOfPoles_txt = txtCount
         self.keyPhasor_cmb = cmbTracks
 
-    def addTrack(self):
+    def addTrack(self, trackCfg=None):
         tt = self.tracks_table
         n = tt.rowCount()
         tt.setRowCount(n+1)
@@ -196,6 +207,16 @@ class AirGapConfig(QtGui.QDialog):
         cmbTracks.addItems(tracks)
 
         tt.setCellWidget(n,0,cmbTracks)
+
+        if trackCfg:
+            for i in range(len(tracks)):
+                if trackCfg['guid']==self.config['trackSrc'][i]['guid']:
+                    cmbTracks.setCurrentIndex(i)
+                    break
+            itm = QtGui.QTableWidgetItem(str(trackCfg['thickness']))
+            tt.setItem(n,1,itm)
+            itm = QtGui.QTableWidgetItem(str(trackCfg['angel']))
+            tt.setItem(n,2,itm)
 
     def removeTrack(self, index):
         self.tracks_table.removeRow(index)

@@ -27,6 +27,13 @@ class SignalModule():
             t = TrackModule(track['guid'], track['name'], self)
             self.tracks.append(t)
 
+    def fillProcess(self, process):
+        for prc in process:
+            moduleClass = gl.moduleManager.getModule(prc['type'])
+            p = moduleClass(prc['guid'], prc['name'], self)
+            p.parseConfig(prc)
+            self.process.append(p)
+
     def loadTracks(self, trackData):
         pass
 
@@ -41,6 +48,9 @@ class SignalModule():
             if track.guid == guid:
                 return track
         return None
+    
+    def refresh(self):
+        gl.projectManager.refreshListWidget()
     
 # custom part over, interface part start
 
