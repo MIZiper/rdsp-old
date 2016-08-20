@@ -30,8 +30,7 @@ class ListWidgetBase(QTreeWidget):
         item = QTreeWidgetItem(parent)
         item.setText(0, node['type'])
         item.setText(1, node['name'])
-        item.setData(0, 33, node['type']) # 33 user-role for module type
-        item.setData(0, 34, node['object']) # 34 user-role for object
+        item.setData(0, 33, node['object']) # 33 user-role for module object
         if 'sub' in node.keys():
             for subNode in node['sub']:
                 self.appendNode(item, subNode)
@@ -39,8 +38,8 @@ class ListWidgetBase(QTreeWidget):
     def contextMenu(self, position):
         items = self.selectedItems()
         if len(items) > 0:
-            moduleClassName = items[0].data(0, 33)
-            boundObject = items[0].data(0, 34)
+            boundObject = items[0].data(0, 33)
+            moduleClassName = boundObject.ModuleName
             moduleClass = gl.moduleManager.getModule(moduleClassName)
             if moduleClass:
                 menu = QMenu()
