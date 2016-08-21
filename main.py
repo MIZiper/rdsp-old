@@ -12,10 +12,6 @@ import uuid, json
 from util import ModuleManager, ProjectManager
 
 APPNAME = "RDSP"
-PROJPATH = ''
-SOURCEDIR = 'source/'
-RESULTDIR = 'result/'
-CONFIG = 'project.json'
 
 import gl
 
@@ -31,7 +27,7 @@ class ListWidgetBase(QTreeWidget):
         item.setText(0, node['type'])
         item.setText(1, node['name'])
         item.setData(0, 33, node['object']) # 33 user-role for module object
-        if 'sub' in node.keys():
+        if 'sub' in node:
             for subNode in node['sub']:
                 self.appendNode(item, subNode)
     
@@ -69,7 +65,7 @@ class ListProjectWidget(ListWidgetBase):
             'name':signal.name,
             'object':signal,
             'sub':[
-                process.getConfig() for process in signal.process
+                process.getListConfig() for process in signal.process
             ]
         }
         self.appendNode(self, node)
@@ -84,7 +80,7 @@ class ListTrackWidget(ListWidgetBase):
             'name':signal.name,
             'object':signal,
             'sub':[
-                track.getConfig() for track in signal.tracks
+                track.getListConfig() for track in signal.tracks
             ]
         }
         # change the type so as to drop "new process", but a new module class required
@@ -171,7 +167,7 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("Done!", 3000)
 
     def import_mat(self):
-        if not PROJPATH:
+        if not gl.projectPath:
             QMessageBox.warning(self, APPNAME, 'Open a project first or create a new one.')
             return
 
@@ -179,27 +175,14 @@ class MainWindow(QMainWindow):
         if not filename:
             return
 
-        self.statusBar().showMessage("Copying Matlab file ...")
+        self.statusBar().showMessage("Parsing Matlab file ...")
         QApplication.setOverrideCursor(Qt.WaitCursor)
-        fname = path.basename(filename)
         self.recentSetting.setValue('recentMat',path.dirname(filename))
-        guid = str(uuid.uuid4())
-        matpath = path.join(PROJPATH,SOURCEDIR,guid+'.mat')
-        QFile.copy(filename, matpath)
-        self.statusBar().showMessage("Copy done, parsing ...")
-        # self.proj_list.addNewMat(fname)
-        # self.track_list.addNewMat(fname)
-        gl.projectManager.addNewMat(guid, fname, matpath)
+        gl.projectManager.addNewMat(filename)
         self.statusBar().showMessage("Done!", 3000)
         QApplication.restoreOverrideCursor()
 
-    def delMat(self, guid):
-        # prompt confirm
-        QFile.remove(path.join(PROJPATH,SOURCEDIR,guid+'.mat'))
-        # force save project, since file won't exist
-
     def open_project(self):
-        global PROJPATH, CONFIG
         filename = QFileDialog.getOpenFileName(self, "Open Project File", filter='JSON File (*.json);;All (*.*)', directory=self.recentSetting.value('recentProj',''))
         if not filename:
             return
@@ -210,23 +193,22 @@ class MainWindow(QMainWindow):
                 "Cannot open file %s:\n%s." % (filename, filehandle.errorString()))
             return
         
-        PROJPATH = path.dirname(filename)
-        self.recentSetting.setValue('recentProj',PROJPATH)
-        CONFIG = path.basename(filename)
+        gl.projectPath = path.dirname(filename)
+        self.recentSetting.setValue('recentProj',gl.projectPath)
+        gl.projectConfig = path.basename(filename)
         with open(filename) as fp:
             data = json.load(fp)
 
         gl.projectManager.initConfig(data)
 
     def save_project(self):
-        if PROJPATH:
-            filename = path.join(PROJPATH,CONFIG)
+        if gl.projectPath:
+            filename = path.join(gl.projectPath,gl.projectConfig)
             with open(filename, mode='w') as fp:
                 json.dump(gl.projectManager.getConfig(),fp, indent=4)
 
     def new_project(self):
-        global PROJPATH
-        if PROJPATH:
+        if gl.projectPath:
             # prompt to save project
             pass
 
@@ -234,11 +216,11 @@ class MainWindow(QMainWindow):
         if not prjfolder:
             return
 
-        PROJPATH = prjfolder
-        self.recentSetting.setValue('recentProj',PROJPATH)
+        gl.projectPath = prjfolder
+        self.recentSetting.setValue('recentProj',gl.projectPath)
         try:
-            mkdir(path.join(PROJPATH,SOURCEDIR))
-            mkdir(path.join(PROJPATH,RESULTDIR))
+            mkdir(path.join(gl.projectPath,gl.SOURCEDIR))
+            mkdir(path.join(gl.projectPath,gl.RESULTDIR))
         except:
             pass
 

@@ -6,7 +6,7 @@ class AirGapModule():
         {'title':'Process', 'action':'processNow'},
         {'title':'Config', 'action':'setConfig'},
         {'title':'Show Result', 'action':'showResult'}, # showFigure/showTable/exportData
-        {'title':'Delete', 'action':'deleteProcess'}
+        {'title':'Delete', 'action':'delete'}
     ]
     def __init__(self, guid, name, parent):
         self.name = name
@@ -39,14 +39,13 @@ class AirGapModule():
             return True
         return False
 
-    def listPackage(self):
-        pass
-
     def propertyWindow(self):
         pass
 
     def parseConfig(self, config):
-        self.name = config['name']
+        if 'name' in config:
+            self.name = config['name']
+
         self.config = {
             'rot-cw':config['rot-cw'],
             'num-cw':config['num-cw'],
@@ -61,33 +60,44 @@ class AirGapModule():
             } for track in config['trackSet']
         ]
 
-    def getConfig(self, forList=True):
-        cfg = {
+    def getFileConfig(self):
+        config = {
             'type':self.ModuleName,
             'guid':self.guid,
-            'name':self.name
+            'name':self.name,
+            'config':{}
         }
-        if forList:
-            cfg['object'] = self
-            cfg['sub'] = [
-                trackSet['object'].getConfig() for trackSet in self.tracks
-            ]
-            kpCfg = self.keyPhasor.getConfig()
-            kpCfg['type'] = 'KeyPhasor'
-            cfg['sub'].insert(0, kpCfg)
-        else:
-            cfg['rot-cw'] = self.config['rot-cw']
-            cfg['num-cw'] = self.config['num-cw']
-            cfg['numOfPoles'] = self.config['numOfPoles']
-            cfg['keyPhasor'] = self.keyPhasor.guid
-            cfg['trackSet'] = [
-                {
-                    'guid':track['object'].guid,
-                    'thickness':track['thickness'],
-                    'angel':track['angel']
-                } for track in self.tracks
-            ]
-        return cfg
+        cfg = config['config']
+        cfg['rot-cw'] = self.config['rot-cw']
+        cfg['num-cw'] = self.config['num-cw']
+        cfg['numOfPoles'] = self.config['numOfPoles']
+        cfg['keyPhasor'] = self.keyPhasor.guid
+        cfg['trackSet'] = [
+            {
+                'guid':track['object'].guid,
+                'thickness':track['thickness'],
+                'angel':track['angel']
+            } for track in self.tracks
+        ]
+
+        return config
+
+    def getListConfig(self):
+        config = {
+            'type':self.ModuleName,
+            'guid':self.guid,
+            'name':self.name,
+            'object':self,
+            'sub':[]
+        }
+        config['sub'] = [
+            trackSet['object'].getListConfig() for trackSet in self.tracks
+        ]
+        kpCfg = self.keyPhasor.getListConfig()
+        kpCfg['type'] = 'KeyPhasor'
+        config['sub'].insert(0, kpCfg)
+
+        return config
 
 # interface part over, event part start
 
@@ -95,7 +105,9 @@ class AirGapModule():
         pass
 
     def setConfig(self):
-        cfg = self.getConfig(False)
+        config = self.getFileConfig()
+        cfg = config['config']
+        cfg['name'] = self.name
         cfg['trackSrc'] = self.parent.getTracksList()
         if self.configWindow(cfg):
             self.parent.refresh()
@@ -103,7 +115,7 @@ class AirGapModule():
     def showResult(self):
         pass
 
-    def deleteProcess(self):
+    def delete(self):
         pass
 
 class AirGapConfig(QtGui.QDialog):

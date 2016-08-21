@@ -18,20 +18,19 @@ class SignalModule():
         self.parent = parent
         self.tracks = []
         self.process = []
-
-    def fillProperties(self, propDict):
-        pass
+        self.config = {}
 
     def fillTracks(self, tracks):
         for track in tracks:
             t = TrackModule(track['guid'], track['name'], self)
+            t.parseConfig(track['config'])
             self.tracks.append(t)
 
     def fillProcess(self, process):
         for prc in process:
             moduleClass = gl.moduleManager.getModule(prc['type'])
             p = moduleClass(prc['guid'], prc['name'], self)
-            p.parseConfig(prc)
+            p.parseConfig(prc['config'])
             self.process.append(p)
 
     def loadTracks(self, trackData):
@@ -54,24 +53,26 @@ class SignalModule():
     
 # custom part over, interface part start
 
+    def parseConfig(self, config):
+        self.config = config
+
     def configWindow(self):
         pass
     
-    def getConfig(self, forList=True):
+    def getFileConfig(self):
         cfg = {
             'type':self.ModuleName,
             'guid':self.guid,
             'name':self.name,
-            'object':self,
+            'config':self.config,
             'tracks':[
-                track.getConfig(forList) for track in self.tracks
+                track.getFileConfig() for track in self.tracks
             ],
             'process':[
-                process.getConfig(forList) for process in self.process
+                process.getFileConfig() for process in self.process
             ]
         }
-        if not forList:
-            del cfg['object']
+        
         return cfg
 
 # interface part over, event part start
@@ -79,7 +80,10 @@ class SignalModule():
     def delete(self):
         gl.projectManager.delSignal(self)
         # clean the tracks & process
-        # delete process' result file meanwhile
+        for prc in self.process:
+            prc.delete()
+        for track in self.tracks:
+            track.delete()
 
     def newProcess(self):
         modulesName = gl.moduleManager.getModulesName()
@@ -107,25 +111,37 @@ class TrackModule():
         self.name = name
         self.parent = parent
         self.data = None
-
-    def fillProperties(self, propDict):
-        pass
+        self.config = {}
 
     def loadData(self):
         pass
 
 # custom part over, interface part start
 
-    def getConfig(self, forList=True):
+    def parseConfig(self, config):
+        self.config = config
+
+    def getListConfig(self):
         cfg = {
             'type':self.ModuleName,
             'guid':self.guid,
             'name':self.name,
             'object':self
         }
-        if not forList:
-            del cfg['object']
         return cfg
+
+    def getFileConfig(self):
+        cfg = {
+            'type':self.ModuleName,
+            'guid':self.guid,
+            'name':self.name,
+            'config':self.config
+        }
+        return cfg
+
+    def delete(self):
+        import os
+        os.remove(os.path.join(gl.projectPath,gl.SOURCEDIR,self.guid+gl.TRACKEXT))
 
 # interface part over, event part start
 

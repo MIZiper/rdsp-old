@@ -10,26 +10,42 @@ class ProjectManager():
     def registerListWidget(self, listWidget):
         self.listWidget.append(listWidget)
 
-    def addNewMat(self, guid, name, matpath):
+    def addNewMat(self, matpath):
         from default import SignalModule
         from scipy.io import loadmat
-        import uuid
+        import uuid, gl, numpy
+        from os import path
 
         mat = loadmat(matpath)
         i = 1
         tracks = []
 
-        while ('Track%d' % i) in mat.keys():
+        while ('Track%d' % i) in mat:
+            guid = str(uuid.uuid4())
+            numpy.save(path.join(gl.projectPath,gl.SOURCEDIR,guid+gl.TRACKEXT), mat['Track%d' % i])
             tracks.append({
-                'guid':str(uuid.uuid4()),
-                'name':mat['Track%d_Name' % i][0]
+                'guid':guid,
+                'name':mat['Track%d_Name' % i][0],
+                'config':{
+                    'bandwidth':int(mat['Track%d_TrueBandWidth' % i][0,0]),
+                    'c1':float(mat['Track%d_Sensitivity' % i][0,0]),
+                    'c0':float(mat['Track%d_Offset' % i][0,0]),
+                    'x-unit':mat['Track%d_X_Magnitude' % i][0],
+                    'y-unit':mat['Track%d_Y_Magnitude' % i][0]
+                    # Track%d_Coupling: DC/AC
+                    # Track%d_Format: 32 bit floating point
+                    # Track%d_Range_Peak
+                    # Track%d_Sensor
+                }
             })
             i += 1
 
+        guid = str(uuid.uuid4())
+        name = path.basename(matpath)
         signal = SignalModule(guid, name, self)
-        signal.fillProperties({
+        signal.parseConfig({
             'date':mat['RecordDate'][0],
-            'length':mat['RecordLength'][0,0]
+            'length':float(mat['RecordLength'][0,0])
         })
         signal.fillTracks(tracks)
         self.signals.append(signal)
@@ -38,8 +54,8 @@ class ProjectManager():
             lw.addNewSignal(signal)
 
     def delSignal(self, signal):
-        if self.parent:
-            self.parent.delMat(signal.guid)
+        # prompt confirm
+        # force save project, since file won't exist
         self.signals.remove(signal)
         self.refreshListWidget()
 
@@ -51,7 +67,7 @@ class ProjectManager():
             signal = SignalModule(dt['guid'],dt['name'],self)
             signal.fillTracks(dt['tracks'])
             signal.fillProcess(dt['process'])
-            # signal.fillProperties
+            signal.parseConfig(dt['config'])
             self.signals.append(signal)
             
         self.refreshListWidget()
@@ -63,12 +79,11 @@ class ProjectManager():
                 lw.addNewSignal(signal)
 
     def getConfig(self):
-        return [ signal.getConfig(False) for signal in self.signals]
+        return [ signal.getFileConfig() for signal in self.signals]
 """
     Search modules and register
 """
 class ModuleManager():
-    # TODO: new process type from signal file context menu
     def __init__(self):
         # search modules in module/
         # the parameter should be a path, so to import 3rd-party modules
