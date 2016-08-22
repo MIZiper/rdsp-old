@@ -2,7 +2,8 @@
     default/embeded module for common use
 """
 
-import gl, uuid
+import gl, uuid, numpy
+from os import path
 
 class SignalModule():
     ModuleName = 'Signal'
@@ -97,6 +98,7 @@ class SignalModule():
                 self.process.append(o)
                 gl.projectManager.refreshListWidget()
 
+from guiqwt.builder import make
 class TrackModule():
     ModuleName = 'Track'
     ContextMenu = [
@@ -112,9 +114,19 @@ class TrackModule():
         self.parent = parent
         self.data = None
         self.config = {}
+        self.dataLoaded = False
 
     def loadData(self):
-        pass
+        if not self.dataLoaded:
+            self.data = numpy.load(path.join(gl.projectPath,gl.SOURCEDIR,self.guid+gl.TRACKEXT))
+            self.dataLoaded = True
+
+    def getPlotData(self):
+        self.loadData()
+        l = self.data.size / (self.config['bandwidth']*2.56)
+        d = 1 / (self.config['bandwidth']*2.56)
+        xs = numpy.arange(0,l,d)
+        return (xs,self.data[0,:])
 
 # custom part over, interface part start
 
@@ -140,16 +152,44 @@ class TrackModule():
         return cfg
 
     def delete(self):
-        import os
-        os.remove(os.path.join(gl.projectPath,gl.SOURCEDIR,self.guid+gl.TRACKEXT))
+        os.remove(path.join(gl.projectPath,gl.SOURCEDIR,self.guid+gl.TRACKEXT))
 
 # interface part over, event part start
 
     def displayOverride(self):
-        pass
+        cw = gl.plotManager.requestCurrentCurve()
+        if cw:
+            plot = cw.plot
+            (xs,ys) = self.getPlotData()
+            curve = make.curve(xs, ys)
+            if hasattr(cw,'RDSP_Curves'):
+                cs = getattr(cw, 'RDSP_Curves')
+                cs.clear()
+                plot.del_all_items()
+                plot.add_item(curve)
+            else:
+                plot.add_item(curve)
+                cs = [curve]
+                setattr(cw,'RDSP_Curves',cs)
 
     def displayNew(self):
-        pass
+        cw = gl.plotManager.requestNewCurve(self.name)
+        plot = cw.plot
+        (xs,ys) = self.getPlotData()
+        curve = make.curve(xs,ys)
+        plot.add_item(curve)
 
     def displayOverlap(self):
-        pass
+        cw = gl.plotManager.requestCurrentCurve()
+        if cw:
+            plot = cw.plot
+            (xs,ys) = self.getPlotData()
+            curve = make.mcurve(xs, ys)
+            if hasattr(cw,'RDSP_Curves'):
+                cs = getattr(cw, 'RDSP_Curves')
+                cs.append(curve)
+                plot.add_item(curve)
+            else:
+                plot.add_item(curve)
+                cs = [curve]
+                setattr(cw,'RDSP_Curves',cs)

@@ -115,3 +115,29 @@ class ModuleManager():
     
     def getModulesName(self):
         return [name for name in self.modulesName if name!='Signal' and name!='Track'] #]#
+"""
+    Handle plot area, including graphs and tables
+"""
+from guiqwt.plot import CurveWidget
+
+class PlotManager():
+    def __init__(self, plotTab=None):
+        self.plotTab = plotTab
+        if plotTab!=None:
+            self.requestNewCurve('Display')
+
+    def requestNewCurve(self, tabName):
+        cw = CurveWidget()
+        cw.register_all_curve_tools()
+        self.plotTab.addTab(cw, tabName)
+        self.plotTab.setCurrentIndex(self.plotTab.count()-1)
+        return cw
+
+    def requestCurrentCurve(self):
+        c = self.plotTab.currentWidget()
+        if type(c)==CurveWidget:
+            return c
+        return None
+
+    def addNewWidget(self, tabName, widget):
+        self.plotTab.addTab(widget, tabName)

@@ -9,7 +9,7 @@ from guidata.qthelpers import Qt
 from os import path, mkdir
 import uuid, json
 
-from util import ModuleManager, ProjectManager
+from util import ModuleManager, ProjectManager, PlotManager
 
 APPNAME = "RDSP"
 
@@ -95,6 +95,7 @@ class MainWindow(QMainWindow):
         self.recentSetting = QSettings("AHC","rdsp")
         self.initUi()
         # self.loadModule()
+        gl.plotManager = PlotManager(self.disp_widget)
 
     def initUi(self):
         self.setWindowTitle(APPNAME)
@@ -134,8 +135,7 @@ class MainWindow(QMainWindow):
         side_layout.setRowStretch(1, 1)
         #
         disp_widget.setTabPosition(QTabWidget.South)
-        plot = QListWidget(disp_widget)
-        disp_widget.addTab(plot, 'plot')
+        self.disp_widget = disp_widget
         #
         main_layout.addWidget(side_widget, 0, 0)
         main_layout.addWidget(disp_widget, 0, 1)
