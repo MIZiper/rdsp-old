@@ -9,7 +9,7 @@ from guidata.qthelpers import Qt
 from os import path, mkdir
 import uuid, json
 
-from util import ModuleManager, ProjectManager, PlotManager
+from util import ModuleManager, ProjectManager, PlotManager, ProgressManager
 
 APPNAME = "RDSP"
 
@@ -91,6 +91,7 @@ class MainWindow(QMainWindow):
         QMainWindow.__init__(self)
         gl.moduleManager = ModuleManager()
         gl.projectManager = ProjectManager(self)
+        gl.progress = ProgressManager(self)
 
         self.recentSetting = QSettings("AHC","rdsp")
         self.initUi()

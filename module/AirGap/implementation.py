@@ -120,6 +120,9 @@ class AirGapModule():
         numCw = self.config['num-cw']
 
         result = []
+        c = len(self.tracks)
+        k = 0
+        gl.progress.startNewProgress(c,'Processing.')
         for trackSet in self.tracks:
             track_data = trackSet['object'].getData()[0,:]
             track_data_bool = track_data<((track_data.max()+track_data.min())/2)
@@ -154,7 +157,10 @@ class AirGapModule():
                     track_se_pairs[se_idx[i],0] - track_se_pairs[se_idx[i-1],0]
                 )
             result.append(r)
+            k += 1
+            gl.progress.setValue(k)
         np.save(path.join(gl.projectPath,gl.RESULTDIR,self.guid+gl.TRACKEXT),result)
+        gl.progress.endProgress()
 
     def setConfig(self):
         config = self.getFileConfig()

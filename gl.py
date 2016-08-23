@@ -1,8 +1,9 @@
-from util import ModuleManager, ProjectManager, PlotManager
+from util import ModuleManager, ProjectManager, PlotManager, ProgressManager
 
 moduleManager = ModuleManager()
 projectManager = ProjectManager()
 plotManager = PlotManager()
+progress = ProgressManager()
 
 projectPath = ''
 projectConfig = 'project.json'

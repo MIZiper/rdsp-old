@@ -21,6 +21,10 @@ class ProjectManager():
         tracks = []
 
         while ('Track%d' % i) in mat:
+            i += 1
+        j = i
+        gl.progress.startNewProgress(j-1,'Parsing tracks.')
+        for i in range(1,j):
             guid = str(uuid.uuid4())
             numpy.save(path.join(gl.projectPath,gl.SOURCEDIR,guid+gl.TRACKEXT), mat['Track%d' % i])
             tracks.append({
@@ -38,7 +42,8 @@ class ProjectManager():
                     # Track%d_Sensor
                 }
             })
-            i += 1
+            gl.progress.setValue(i)
+        gl.progress.endProgress()
 
         guid = str(uuid.uuid4())
         name = path.basename(matpath)
@@ -141,3 +146,25 @@ class PlotManager():
 
     def addNewWidget(self, tabName, widget):
         self.plotTab.addTab(widget, tabName)
+
+from PyQt4.QtGui import QProgressDialog
+from PyQt4.QtCore import QCoreApplication
+class ProgressManager():
+    def __init__(self, parent=None):
+        if parent:
+            self.progress = QProgressDialog()
+            self.progress.setWindowTitle("Progress")
+            self.progress.setCancelButton(None)
+
+    def startNewProgress(self, count, text):
+        self.progress.setMaximum(count)
+        self.progress.setLabelText(text)
+        self.progress.setValue(0)
+        self.progress.show()
+        QCoreApplication.processEvents()
+
+    def setValue(self, value):
+        self.progress.setValue(value)
+
+    def endProgress(self):
+        self.progress.accept()
