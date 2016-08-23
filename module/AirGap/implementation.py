@@ -19,6 +19,9 @@ class AirGapModule():
             'num-cw':False,
             'numOfPoles':48,
         }
+        self.result = {
+            'speed':''
+        }
     
     def configWindow(self, config=None):
         if not config:
@@ -56,7 +59,8 @@ class AirGapModule():
             {
                 'object':self.parent.getTrack(track['guid']),
                 'thickness':track['thickness'],
-                'angel':track['angel']
+                'angel':track['angel'],
+                'pole':track['pole']
             } for track in config['trackSet']
         ]
 
@@ -76,7 +80,8 @@ class AirGapModule():
             {
                 'guid':track['object'].guid,
                 'thickness':track['thickness'],
-                'angel':track['angel']
+                'angel':track['angel'],
+                'pole':track['pole']
             } for track in self.tracks
         ]
 
@@ -102,7 +107,54 @@ class AirGapModule():
 # interface part over, event part start
 
     def processNow(self):
-        pass
+        from rdsp.module.AirGap.algorithm import findContinuous, getAprxValue, findSEIndex
+        import numpy as np
+        import gl
+        from os import path
+        kp_data = self.keyPhasor.getData()[0,:]
+        kp_data_bool = kp_data<((kp_data.max()+kp_data.min())/2)
+        kp_se_pairs = findContinuous(kp_data_bool,0)
+        tolerance = 0.01
+        poles = self.config['numOfPoles']
+        rotCw = self.config['rot-cw']
+        numCw = self.config['num-cw']
+
+        result = []
+        for trackSet in self.tracks:
+            track_data = trackSet['object'].getData()[0,:]
+            track_data_bool = track_data<((track_data.max()+track_data.min())/2)
+            track_se_pairs = findContinuous(track_data_bool,0)
+            se_idx = findSEIndex(kp_se_pairs, track_se_pairs)
+            t_pole = trackSet['pole']
+            t_thick = trackSet['thickness']
+            t_freq = trackSet['object'].config['bandwidth']*2.56
+            l = se_idx.size
+            r = {
+                'speed':np.zeros(l-1),
+                'name':trackSet['object'].name,
+                'angel':trackSet['angel'],
+                'data':np.zeros((poles,l-1))
+            }
+            dat = r['data']
+            spd = r['speed']
+            for i in range(1,l):
+                track_se_segment = track_se_pairs[se_idx[i-1]:se_idx[i],:]
+                (ll,ww) = track_se_segment.shape
+                # assert ll==numOfPoles
+                for j in range(ll):
+                    (v,c) = getAprxValue(track_data,track_se_segment[j,:],tolerance)
+                    n = t_pole+j*(-1+numCw*2)*(1-2*rotCw)
+                    if n<=0:
+                        n += poles
+                    else:
+                        if n>poles:
+                            n -= poles
+                    dat[j,i-1] = v+t_thick
+                spd[i-1] = 60*t_freq/(
+                    track_se_pairs[se_idx[i],0] - track_se_pairs[se_idx[i-1],0]
+                )
+            result.append(r)
+        np.save(path.join(gl.projectPath,gl.RESULTDIR,self.guid+gl.TRACKEXT),result)
 
     def setConfig(self):
         config = self.getFileConfig()
@@ -187,8 +239,8 @@ class AirGapConfig(QtGui.QDialog):
         sideLayout.addWidget(btnTrack)
         sideLayout.addStretch(1)
 
-        tracksTable = QtGui.QTableWidget(0,3)
-        tracksTable.setHorizontalHeaderLabels(['Track Name','Thickness','Angel'])        
+        tracksTable = QtGui.QTableWidget(0,4)
+        tracksTable.setHorizontalHeaderLabels(['Track Name','Thickness','Angel','Pole'])        
         tracksTable.verticalHeader().sectionDoubleClicked.connect(self.removeTrack)
         self.tracks_table = tracksTable
         if config['trackSet']:
@@ -229,6 +281,8 @@ class AirGapConfig(QtGui.QDialog):
             tt.setItem(n,1,itm)
             itm = QtGui.QTableWidgetItem(str(trackCfg['angel']))
             tt.setItem(n,2,itm)
+            itm = QtGui.QTableWidgetItem(str(trackCfg['pole']))
+            tt.setItem(n,3,itm)
 
     def removeTrack(self, index):
         self.tracks_table.removeRow(index)
@@ -241,7 +295,8 @@ class AirGapConfig(QtGui.QDialog):
             trackSet.append({
                 'guid':trackSrc[tt.cellWidget(r,0).currentIndex()]['guid'],
                 'thickness':float(tt.item(r,1).text()),
-                'angel':float(tt.item(r,2).text())
+                'angel':float(tt.item(r,2).text()),
+                'pole':int(tt.item(r,3).text())
                 # try catch parseFloat error required
             })
 

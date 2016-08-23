@@ -116,17 +116,18 @@ class TrackModule():
         self.config = {}
         self.dataLoaded = False
 
-    def loadData(self):
+    def getData(self):
         if not self.dataLoaded:
             self.data = numpy.load(path.join(gl.projectPath,gl.SOURCEDIR,self.guid+gl.TRACKEXT))
             self.dataLoaded = True
+        return self.data
 
     def getPlotData(self):
-        self.loadData()
-        l = self.data.size / (self.config['bandwidth']*2.56)
+        data = self.getData()
+        l = data.size / (self.config['bandwidth']*2.56)
         d = 1 / (self.config['bandwidth']*2.56)
         xs = numpy.arange(0,l,d)
-        return (xs,self.data[0,:])
+        return (xs,data[0,:])
 
 # custom part over, interface part start
 
