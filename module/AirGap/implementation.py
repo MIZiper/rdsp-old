@@ -1,4 +1,5 @@
 from guidata.qt import QtGui
+import numpy as np
 
 class AirGapModule():
     ModuleName = "AirGap"
@@ -19,9 +20,7 @@ class AirGapModule():
             'num-cw':False,
             'numOfPoles':48,
         }
-        self.result = {
-            'speed':''
-        }
+        self.result = np.array([])
     
     def configWindow(self, config=None):
         if not config:
@@ -59,7 +58,7 @@ class AirGapModule():
             {
                 'object':self.parent.getTrack(track['guid']),
                 'thickness':track['thickness'],
-                'angel':track['angel'],
+                'angle':track['angle'],
                 'pole':track['pole']
             } for track in config['trackSet']
         ]
@@ -80,7 +79,7 @@ class AirGapModule():
             {
                 'guid':track['object'].guid,
                 'thickness':track['thickness'],
-                'angel':track['angel'],
+                'angle':track['angle'],
                 'pole':track['pole']
             } for track in self.tracks
         ]
@@ -135,7 +134,7 @@ class AirGapModule():
             r = {
                 'speed':np.zeros(l-1),
                 'name':trackSet['object'].name,
-                'angel':trackSet['angel'],
+                'angle':trackSet['angle'],
                 'data':np.zeros((poles,l-1))
             }
             dat = r['data']
@@ -161,6 +160,7 @@ class AirGapModule():
             gl.progress.setValue(k)
         np.save(path.join(gl.projectPath,gl.RESULTDIR,self.guid+gl.TRACKEXT),result)
         gl.progress.endProgress()
+        self.result = np.array(result)
 
     def setConfig(self):
         config = self.getFileConfig()
@@ -171,7 +171,13 @@ class AirGapModule():
             self.parent.refresh()
 
     def showResult(self):
-        pass
+        from rdsp.module.AirGap.resultWidget import AirGapResult
+        import gl
+
+        if self.result.size==0:
+            return
+        widget = AirGapResult(self.result)
+        gl.plotManager.addNewWidget(self.name,widget)
 
     def delete(self):
         pass
@@ -246,7 +252,7 @@ class AirGapConfig(QtGui.QDialog):
         sideLayout.addStretch(1)
 
         tracksTable = QtGui.QTableWidget(0,4)
-        tracksTable.setHorizontalHeaderLabels(['Track Name','Thickness','Angel','Pole'])        
+        tracksTable.setHorizontalHeaderLabels(['Track Name','Thickness','Angle','Pole'])        
         tracksTable.verticalHeader().sectionDoubleClicked.connect(self.removeTrack)
         self.tracks_table = tracksTable
         if config['trackSet']:
@@ -285,7 +291,7 @@ class AirGapConfig(QtGui.QDialog):
                     break
             itm = QtGui.QTableWidgetItem(str(trackCfg['thickness']))
             tt.setItem(n,1,itm)
-            itm = QtGui.QTableWidgetItem(str(trackCfg['angel']))
+            itm = QtGui.QTableWidgetItem(str(trackCfg['angle']))
             tt.setItem(n,2,itm)
             itm = QtGui.QTableWidgetItem(str(trackCfg['pole']))
             tt.setItem(n,3,itm)
@@ -301,7 +307,7 @@ class AirGapConfig(QtGui.QDialog):
             trackSet.append({
                 'guid':trackSrc[tt.cellWidget(r,0).currentIndex()]['guid'],
                 'thickness':float(tt.item(r,1).text()),
-                'angel':float(tt.item(r,2).text()),
+                'angle':float(tt.item(r,2).text()),
                 'pole':int(tt.item(r,3).text())
                 # try catch parseFloat error required
             })
