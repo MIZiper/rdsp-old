@@ -31,6 +31,18 @@ class ListWidgetBase(QTreeWidget):
             for subNode in node['sub']:
                 self.appendNode(item, subNode)
     
+    def registerPropertyWindow(self, prop_list):
+        self.propertyWindow = prop_list
+        self.currentItemChanged.connect(self.showProperty)
+
+    def showProperty(self, item):
+        boundObject = item.data(0, 33)
+        prop = boundObject.getProperty()
+        self.propertyWindow.clear()
+        for (k,v) in prop.items():
+            self.propertyWindow.addItem(k)
+            self.propertyWindow.addItem('  '+str(v))
+
     def contextMenu(self, position):
         items = self.selectedItems()
         if len(items) > 0:
@@ -131,6 +143,8 @@ class MainWindow(QMainWindow):
         tab_list_widget.addTab(self.track_list, 'Track')
         side_layout.addWidget(tab_list_widget, 0, 0)
         prop_widget = QListWidget(side_widget)
+        self.proj_list.registerPropertyWindow(prop_widget)
+        self.track_list.registerPropertyWindow(prop_widget)
         side_layout.addWidget(prop_widget, 1, 0)
         side_layout.setRowStretch(0, 2)
         side_layout.setRowStretch(1, 1)

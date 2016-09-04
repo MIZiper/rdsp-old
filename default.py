@@ -76,6 +76,12 @@ class SignalModule():
         
         return cfg
 
+    def getProperty(self):
+        return {
+            "Record Date":self.config['date'],
+            "Duration":self.config['length']
+        }
+
 # interface part over, event part start
 
     def delete(self):
@@ -142,6 +148,11 @@ class TrackModule():
             'object':self
         }
         return cfg
+
+    def getProperty(self):
+        return {
+            "BandWidth":self.config['bandwidth']
+        }
 
     def getFileConfig(self):
         cfg = {

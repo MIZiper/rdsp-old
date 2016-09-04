@@ -41,8 +41,10 @@ class AirGapModule():
             return True
         return False
 
-    def propertyWindow(self):
-        pass
+    def getProperty(self):
+        return {
+            "Number of Poles":self.config['numOfPoles']
+        }
 
     def parseConfig(self, config):
         if 'name' in config:
