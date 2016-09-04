@@ -136,6 +136,8 @@ class MainWindow(QMainWindow):
         side_layout.setRowStretch(1, 1)
         #
         disp_widget.setTabPosition(QTabWidget.South)
+        disp_widget.setTabsClosable(True)
+        disp_widget.tabCloseRequested.connect(self.plotTab_close)
         self.disp_widget = disp_widget
         #
         main_layout.addWidget(side_widget, 0, 0)
@@ -166,6 +168,14 @@ class MainWindow(QMainWindow):
             # # an __init__.py in dir should handle and export the moduleClass
             # # but don't know how to
         self.statusBar().showMessage("Done!", 3000)
+
+    def plotTab_close(self, index):
+        # import gc
+        widget = self.disp_widget.widget(index)
+        self.disp_widget.removeTab(index)
+        gl.plotManager.clean(widget)
+        widget.deleteLater()
+        # gc.collect()
 
     def import_mat(self):
         if not gl.projectPath:

@@ -153,6 +153,7 @@ class TrackModule():
         return cfg
 
     def delete(self):
+        import os
         os.remove(path.join(gl.projectPath,gl.SOURCEDIR,self.guid+gl.TRACKEXT))
 
 # interface part over, event part start

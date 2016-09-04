@@ -146,6 +146,12 @@ class PlotManager():
 
     def addNewWidget(self, tabName, widget):
         self.plotTab.addTab(widget, tabName)
+        self.plotTab.setCurrentIndex(self.plotTab.count()-1)
+
+    def clean(self, widget):
+        if type(widget)==CurveWidget:
+            plot = widget.plot
+            plot.del_all_items()
 
 from PyQt4.QtGui import QProgressDialog
 from PyQt4.QtCore import QCoreApplication
