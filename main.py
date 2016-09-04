@@ -230,7 +230,7 @@ class MainWindow(QMainWindow):
         if gl.projectPath:
             filename = path.join(gl.projectPath,gl.projectConfig)
             with open(filename, mode='w') as fp:
-                json.dump(gl.projectManager.getConfig(),fp, indent=4)
+                json.dump(gl.projectManager.getConfig(),fp, indent=2)
 
     def new_project(self):
         if gl.projectPath:

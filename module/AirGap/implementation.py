@@ -9,7 +9,7 @@ class AirGapModule():
         {'title':'Show Result', 'action':'showResult'}, # showFigure/showTable/exportData
         {'title':'Delete', 'action':'delete'}
     ]
-    def __init__(self, guid, name, parent):
+    def __init__(self, guid, name, parent, processed=False):
         self.name = name
         self.guid = guid
         self.parent = parent
@@ -20,7 +20,19 @@ class AirGapModule():
             'num-cw':False,
             'numOfPoles':48,
         }
-        self.result = np.array([])
+        self.result = None
+        self.resultLoaded = False
+        self.processed = processed
+
+    def getResult(self):
+        from os import path
+        import gl
+        
+        if not self.resultLoaded:
+            self.result = np.load(path.join(gl.projectPath,gl.RESULTDIR,self.guid+gl.TRACKEXT))
+            self.resultLoaded = True
+
+        return self.result
     
     def configWindow(self, config=None):
         if not config:
@@ -70,7 +82,8 @@ class AirGapModule():
             'type':self.ModuleName,
             'guid':self.guid,
             'name':self.name,
-            'config':{}
+            'config':{},
+            'processed':self.processed
         }
         cfg = config['config']
         cfg['rot-cw'] = self.config['rot-cw']
@@ -164,6 +177,9 @@ class AirGapModule():
         gl.progress.endProgress()
         self.result = np.array(result)
 
+        self.processed = True
+        self.resultLoaded = True
+
     def setConfig(self):
         config = self.getFileConfig()
         cfg = config['config']
@@ -176,10 +192,10 @@ class AirGapModule():
         from rdsp.module.AirGap.resultWidget import AirGapResult
         import gl
 
-        if self.result.size==0:
-            return
-        widget = AirGapResult(self.result)
-        gl.plotManager.addNewWidget(self.name,widget)
+        if self.processed:
+            result = self.getResult()
+            widget = AirGapResult(result)
+            gl.plotManager.addNewWidget(self.name,widget)
 
     def delete(self):
         pass

@@ -30,7 +30,10 @@ class SignalModule():
     def fillProcess(self, process):
         for prc in process:
             moduleClass = gl.moduleManager.getModule(prc['type'])
-            p = moduleClass(prc['guid'], prc['name'], self)
+            if 'processed' in prc:
+                p = moduleClass(prc['guid'], prc['name'], self, prc['processed'])
+            else:
+                p = moduleClass(prc['guid'], prc['name'], self)
             p.parseConfig(prc['config'])
             self.process.append(p)
 
