@@ -198,7 +198,11 @@ class AirGapModule():
             gl.plotManager.addNewWidget(self.name,widget)
 
     def delete(self):
-        pass
+        self.parent.delProcess(self)
+        import os, gl
+        from os import path
+        if self.processed:
+            os.remove(path.join(gl.projectPath,gl.RESULTDIR,self.guid+gl.TRACKEXT))
 
 class AirGapConfig(QtGui.QDialog):
     def __init__(self, config):

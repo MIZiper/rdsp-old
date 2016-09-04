@@ -36,6 +36,8 @@ class ListWidgetBase(QTreeWidget):
         self.currentItemChanged.connect(self.showProperty)
 
     def showProperty(self, item):
+        if item == None:
+            return
         boundObject = item.data(0, 33)
         prop = boundObject.getProperty()
         self.propertyWindow.clear()

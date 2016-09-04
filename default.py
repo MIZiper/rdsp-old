@@ -52,6 +52,10 @@ class SignalModule():
                 return track
         return None
     
+    def delProcess(self, process):
+        self.process.remove(process)
+        self.refresh()
+    
     def refresh(self):
         gl.projectManager.refreshListWidget()
     
