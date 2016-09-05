@@ -7,6 +7,7 @@ class AirGapModule():
         {'title':'Process', 'action':'processNow'},
         {'title':'Config', 'action':'setConfig'},
         {'title':'Show Result', 'action':'showResult'}, # showFigure/showTable/exportData
+        {'title':'Export', 'action':'export2xlsx'},
         {'title':'Delete', 'action':'delete'}
     ]
     def __init__(self, guid, name, parent, processed=False):
@@ -196,6 +197,28 @@ class AirGapModule():
             result = self.getResult()
             widget = AirGapResult(result)
             gl.plotManager.addNewWidget(self.name,widget)
+
+    def export2xlsx(self):
+        if self.processed:
+            filename = QtGui.QFileDialog.getSaveFileName(caption='Export to Excel', filter='Excel File (*.xlsx)')
+            if not filename:
+                return
+
+            result = self.getResult()
+            import xlsxwriter
+            wb = xlsxwriter.Workbook(filename)
+            num_format = wb.add_format({'num_format':'0.000'})
+            for dt in result:
+                ws = wb.add_worksheet(dt['name'])
+                ws.write_row(0,1,dt['speed'],num_format)
+                ws.write_string(0,0,'Speed (rpm)')
+                row = 2
+                for d in dt['data']:
+                    ws.write(row,0,row-1)
+                    ws.write_row(row,1,d,num_format)
+                    row += 1
+
+            wb.close()
 
     def delete(self):
         self.parent.delProcess(self)
