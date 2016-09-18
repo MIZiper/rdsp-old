@@ -156,6 +156,7 @@ class AirGapResult(QtGui.QWidget):
         self.speed_label.setText(
             '%.2f' % result[sensIdx]['speed'][spedIdx]
         )
+        
 def main():
     from guidata import qapplication
     app = qapplication()

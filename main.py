@@ -1,19 +1,18 @@
-from guidata.qt.QtGui import (QMainWindow, QHBoxLayout, QTabWidget, QTreeWidget,
+from PyQt4.QtGui import (QMainWindow, QHBoxLayout, QTabWidget, QTreeWidget,
     QVBoxLayout, QListWidget, QSplitter, QVBoxLayout, QWidget,
     QFileDialog ,QMessageBox, QTreeWidgetItem, QMenu,
     QGridLayout, QApplication)
-from guidata.qt.QtCore import QFile, QSettings
+from PyQt4.QtCore import QFile, QSettings, Qt
 from guidata.qthelpers import (create_action, add_actions)
-from guidata.qthelpers import Qt
 
-from os import path, mkdir
-import uuid, json
+from os import path, mkdir, listdir
+import uuid, json, importlib, functools
 
-from util import ModuleManager, ProjectManager, PlotManager, ProgressManager
+from rdsp.util import ModuleManager, ProjectManager, PlotManager, ProgressManager
+from rdsp.default import SignalModule, TrackModule
+from rdsp import gl
 
 APPNAME = "RDSP"
-
-import gl
 
 class ListWidgetBase(QTreeWidget):
     def __init__(self, parent):
@@ -53,7 +52,6 @@ class ListWidgetBase(QTreeWidget):
             moduleClass = gl.moduleManager.getModule(moduleClassName)
             if moduleClass:
                 menu = QMenu()
-                import functools
                 actions = (
                     create_action(
                         menu, action['title'],
@@ -163,7 +161,6 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(main_widget)
 
     def loadModule(self):
-        from default import SignalModule, TrackModule
         gl.moduleManager.registerModule(SignalModule)
         gl.moduleManager.registerModule(TrackModule)
 
@@ -171,11 +168,10 @@ class MainWindow(QMainWindow):
         gl.projectManager.registerListWidget(self.track_list)
 
         self.statusBar().showMessage("Loading modules ...")
-        import os, importlib
-        dirs = os.listdir('module')
+        dirs = listdir('module')
         # judge if it is dir
         for dir in dirs:
-            modulePath = 'module.%s.implementation' % dir
+            modulePath = 'rdsp.module.%s.implementation' % dir
             module = getattr(importlib.import_module(modulePath),'%sModule' % dir)
             gl.moduleManager.registerModule(module)
             # # the way should be like:

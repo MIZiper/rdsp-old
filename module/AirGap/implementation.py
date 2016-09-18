@@ -1,5 +1,11 @@
-from guidata.qt import QtGui
+from PyQt4 import QtGui
 import numpy as np
+from os import path
+import os, xlsxwriter
+
+from rdsp.module.AirGap.algorithm import findContinuous, getAprxValue, findSEIndex
+from rdsp.module.AirGap.resultWidget import AirGapResult
+from rdsp import gl
 
 class AirGapModule():
     ModuleName = "AirGap"
@@ -26,9 +32,6 @@ class AirGapModule():
         self.processed = processed
 
     def getResult(self):
-        from os import path
-        import gl
-        
         if not self.resultLoaded:
             self.result = np.load(path.join(gl.projectPath,gl.RESULTDIR,self.guid+gl.TRACKEXT))
             self.resultLoaded = True
@@ -122,10 +125,6 @@ class AirGapModule():
 # interface part over, event part start
 
     def processNow(self):
-        from rdsp.module.AirGap.algorithm import findContinuous, getAprxValue, findSEIndex
-        import numpy as np
-        import gl
-        from os import path
         kp_data = self.keyPhasor.getData()[0,:]
         kp_data_bool = kp_data<((kp_data.max()+kp_data.min())/2)
         kp_se_pairs = findContinuous(kp_data_bool,0)
@@ -190,9 +189,6 @@ class AirGapModule():
             self.parent.refresh()
 
     def showResult(self):
-        from rdsp.module.AirGap.resultWidget import AirGapResult
-        import gl
-
         if self.processed:
             result = self.getResult()
             widget = AirGapResult(result)
@@ -205,7 +201,6 @@ class AirGapModule():
                 return
 
             result = self.getResult()
-            import xlsxwriter
             wb = xlsxwriter.Workbook(filename)
             num_format = wb.add_format({'num_format':'0.000'})
             for dt in result:
@@ -222,8 +217,6 @@ class AirGapModule():
 
     def delete(self):
         self.parent.delProcess(self)
-        import os, gl
-        from os import path
         if self.processed:
             os.remove(path.join(gl.projectPath,gl.RESULTDIR,self.guid+gl.TRACKEXT))
 

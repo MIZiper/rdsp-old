@@ -1,3 +1,12 @@
+from rdsp.default import SignalModule
+from rdsp import gl
+from scipy.io import loadmat
+import uuid, numpy
+from os import path
+from guiqwt.plot import CurveWidget
+from PyQt4.QtGui import QProgressDialog
+from PyQt4.QtCore import QCoreApplication
+
 """
     Read/Parse/Save Proj file
 """
@@ -11,11 +20,6 @@ class ProjectManager():
         self.listWidget.append(listWidget)
 
     def addNewMat(self, matpath):
-        from default import SignalModule
-        from scipy.io import loadmat
-        import uuid, gl, numpy
-        from os import path
-
         mat = loadmat(matpath)
         i = 1
         tracks = []
@@ -65,7 +69,6 @@ class ProjectManager():
         self.refreshListWidget()
 
     def initConfig(self, data):
-        from default import SignalModule
         self.signals.clear()
 
         for dt in data:
@@ -85,6 +88,7 @@ class ProjectManager():
 
     def getConfig(self):
         return [ signal.getFileConfig() for signal in self.signals]
+
 """
     Search modules and register
 """
@@ -120,11 +124,10 @@ class ModuleManager():
     
     def getModulesName(self):
         return [name for name in self.modulesName if name!='Signal' and name!='Track'] #]#
+
 """
     Handle plot area, including graphs and tables
 """
-from guiqwt.plot import CurveWidget
-
 class PlotManager():
     def __init__(self, plotTab=None):
         self.plotTab = plotTab
@@ -153,8 +156,6 @@ class PlotManager():
             plot = widget.plot
             plot.del_all_items()
 
-from PyQt4.QtGui import QProgressDialog
-from PyQt4.QtCore import QCoreApplication
 class ProgressManager():
     def __init__(self, parent=None):
         if parent:

@@ -2,8 +2,11 @@
     default/embeded module for common use
 """
 
-import gl, uuid, numpy
+import uuid, numpy, os
+from rdsp import gl
 from os import path
+from PyQt4.QtGui import QInputDialog
+from guiqwt.builder import make
 
 class SignalModule():
     ModuleName = 'Signal'
@@ -101,7 +104,6 @@ class SignalModule():
 
     def newProcess(self):
         modulesName = gl.moduleManager.getModulesName()
-        from guidata.qt.QtGui import QInputDialog
         item, ok = QInputDialog.getItem(None,'Select a Module','Module:',modulesName,editable=False)
         if ok and item:
             moduleClass = gl.moduleManager.getModule(item)
@@ -111,7 +113,6 @@ class SignalModule():
                 self.process.append(o)
                 gl.projectManager.refreshListWidget()
 
-from guiqwt.builder import make
 class TrackModule():
     ModuleName = 'Track'
     ContextMenu = [
@@ -171,7 +172,6 @@ class TrackModule():
         return cfg
 
     def delete(self):
-        import os
         os.remove(path.join(gl.projectPath,gl.SOURCEDIR,self.guid+gl.TRACKEXT))
 
 # interface part over, event part start
