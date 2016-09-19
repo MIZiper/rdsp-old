@@ -168,17 +168,15 @@ class MainWindow(QMainWindow):
         gl.projectManager.registerListWidget(self.track_list)
 
         self.statusBar().showMessage("Loading modules ...")
-        dirs = listdir('module')
-        # judge if it is dir
-        for dir in dirs:
-            modulePath = 'rdsp.module.%s.implementation' % dir
-            module = getattr(importlib.import_module(modulePath),'%sModule' % dir)
-            gl.moduleManager.registerModule(module)
-            # # the way should be like:
-            # mod = __import__(dir, 'module')
-            # gl.moduleManager.registerModule(mod)
-            # # an __init__.py in dir should handle and export the moduleClass
-            # # but don't know how to
+        rdsp_dir = path.dirname(__file__)
+        module_dir = path.join(rdsp_dir,'module')
+        names = listdir(module_dir)
+        for name in names:
+            if path.isdir(path.join(module_dir,name)) and name!='__pycache__':
+                modulePath = 'rdsp.module.%s' % name
+                module = importlib.import_module(modulePath)
+                if module.ISREADY:
+                    gl.moduleManager.registerModule(module.RDSP_Module)
         self.statusBar().showMessage("Done!", 3000)
 
     def plotTab_close(self, index):
