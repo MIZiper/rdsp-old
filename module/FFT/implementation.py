@@ -3,6 +3,8 @@ from os import path
 import os
 from rdsp import gl
 from PyQt4 import QtGui
+from guiqwt.plot import ImageWidget
+from guiqwt.builder import make
 
 class FFTModule(object):
     ModuleName = 'FFT'
@@ -129,6 +131,7 @@ class FFTModule(object):
             track_data = track.getData()[0]
             r = {
                 'bandwidth':track.config['bandwidth'],
+                'overlap':cfg['overlap'],
                 'data':None
                 # 'Nw'
             }
@@ -309,9 +312,22 @@ class FFTFreqWidget(QtGui.QWidget):
     def __init__(self, result):
         QtGui.QWidget.__init__(self)
 
-class FFTStftWidget(QtGui.QWidget):
+class FFTStftWidget(ImageWidget):
     def __init__(self, result):
-        QtGui.QWidget.__init__(self)
+        ImageWidget.__init__(self)
+        
+        (l,w) = result['data'].shape
+        sr = result['bandwidth']*2.56
+        ols = np.int(2*w*(1-result['overlap']/100))
+        x = (np.arange(l)*ols+w)/sr
+        y = np.fft.fftfreq(2*w,1/sr)[:w]
+        (Y,X) = np.meshgrid(y,x)
+        z = np.abs(result['data'])
+
+        itm = make.pcolor(X,Y,z)
+        self.plot.add_item(itm)
+
+        self.register_all_image_tools()
 
 # to make test easy (show context menu of FFTFreqModule), add the following code, but needs to be removed
 # modify ModuleManager not to show every module registered
