@@ -19,7 +19,7 @@ class FFTModule(object):
         self.freqs = []
         self.config = {
             'lines':1000,
-            'overlap':0.7
+            'overlap':70
         }
         self.result = None
         self.resultLoaded = False
@@ -43,7 +43,7 @@ class FFTModule(object):
             config = {
                 'name': self.name,
                 'lines':1000,
-                'overlap':0.7,
+                'overlap':70,
                 'trackSrc':self.parent.getTracksList(),
                 'tracks':[]
             }
@@ -121,7 +121,7 @@ class FFTModule(object):
 
         Nw = cfg['lines'] * 2.56
         win = np.hanning(Nw)
-        ols = np.int(Nw*(1-cfg['overlap'])) # OverLapStep
+        ols = np.int(Nw*(1-cfg['overlap']/100)) # OverLapStep
 
         result = {}
         self.freqs.clear()
@@ -172,22 +172,82 @@ class FFTConfig(QtGui.QDialog):
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
 
-        # number of lines
+        lblName = QtGui.QLabel('Name')
+        txtName = QtGui.QLineEdit(config['name'])
 
-        # window
+        lblLines = QtGui.QLabel('Lines')
+        txtLines = QtGui.QSpinBox()
+        txtLines.setRange(1000,50000)
+        txtLines.setSingleStep(1000)
+        txtLines.setValue(config['lines'])
 
-        # overlap
+        lblWindow = QtGui.QLabel('Window')
+        # cmbWindow = QtGui.QComboBox()
+
+        lblOverlap = QtGui.QLabel('Overlap (%)')
+        txtOverlap = QtGui.QSpinBox()
+        txtOverlap.setRange(0,100)
+        txtOverlap.setSingleStep(1)
+        txtOverlap.setValue(config['overlap'])
+
+        btnTrack = QtGui.QCommandLinkButton('Add Track')
+        btnTrack.clicked.connect(self.addTrack)
+        tblTrack = QtGui.QTableWidget(0,1)
+        tblTrack.setHorizontalHeaderLabels(['Track Name'])
+        tblTrack.verticalHeader().sectionDoubleClicked.connect(self.removeTrack)
+        self.track_table = tblTrack
+        for track in config['tracks']:
+            self.addTrack(track)
 
         layoutMain = QtGui.QVBoxLayout()
+        layoutMain.addWidget(lblName)
+        layoutMain.addWidget(txtName)
+        layoutMain.addWidget(lblLines)
+        layoutMain.addWidget(txtLines)
+        layoutMain.addWidget(lblOverlap)
+        layoutMain.addWidget(txtOverlap)
+        layoutMain.addWidget(btnTrack)
+        layoutMain.addWidget(tblTrack)
         layoutMain.addWidget(buttonBox)
         self.setLayout(layoutMain)
 
+        self.name_txt = txtName
+        self.lines_txt = txtLines
+        self.overlap_txt = txtOverlap
+
+    def addTrack(self, guid=None):
+        tt = self.track_table
+        n = tt.rowCount()
+        tt.setRowCount(n+1)
+        trackSrc = self.config['trackSrc']
+
+        cmbTracks = QtGui.QComboBox()
+        tracks = [track['name'] for track in trackSrc]
+        cmbTracks.addItems(tracks)
+
+        tt.setCellWidget(n,0,cmbTracks)
+
+        if guid:
+            for i in range(len(tracks)):
+                if guid==trackSrc[i]['guid']:
+                    cmbTracks.setCurrentIndex(i)
+                    break
+
+    def removeTrack(self, index):
+        self.track_table.removeRow(index)
+
     def getResult(self):
+        tt = self.track_table
+        trackSrc = self.config['trackSrc']
+        tracks = []
+        for i in range(tt.rowCount()):
+            tracks.append(trackSrc[tt.cellWidget(i,0).currentIndex()]['guid'])
+
         return {
-            'name':'FFT',
-            'lines':50000,
-            'overlap':0.7,
-            'tracks':[self.config['trackSrc'][0]['guid']]
+            'name':self.name_txt.text(),
+            'lines':self.lines_txt.value(),
+            'overlap':self.overlap_txt.value(),
+            'tracks':tracks
         }
 
 class FFTFreqModule(object):
