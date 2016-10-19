@@ -5,6 +5,7 @@ from rdsp import gl
 from PyQt4 import QtGui
 from guiqwt.plot import ImageWidget
 from guiqwt.builder import make
+from rdsp.util import DisplayRangePicker
 
 class FFTModule(object):
     ModuleName = 'FFT'
@@ -267,6 +268,7 @@ class FFTFreqModule(object):
         self.data = None
         self.config = {}
         self.dataLoaded = False
+        self.track = self.parent.parent.getTrack(self.guid)
 
     def getData(self):
         if not self.dataLoaded:
@@ -281,7 +283,7 @@ class FFTFreqModule(object):
             'name':self.name,
             'object':self,
             'sub':[
-                self.parent.parent.getTrack(self.guid).getListConfig()
+                self.track.getListConfig()
             ]
         }
         return cfg
@@ -304,49 +306,60 @@ class FFTFreqModule(object):
         gl.plotManager.addNewWidget(self.name,widget)
 
     def showStft(self):
-        data = self.getData()
-        widget = FFTStftWidgetPlt(data)
-        gl.plotManager.addNewWidget(self.name,widget)
+        rp = DisplayRangePicker(maxFreq=self.track.config['bandwidth'])
+        rp.exec()
+        if rp.result():
+            result = self.getData()
+            config = rp.getResult()
+
+            (l,w) = result['data'].shape
+            sr = result['bandwidth']*2.56
+            ols = np.int(2*w*(1-result['overlap']/100))
+            x = (np.arange(l)*ols+w)/sr
+            # intercept x if time was provided
+            y = np.fft.fftfreq(2*w,1/sr)[:w]
+            z = result['data']
+            if config['freq']:
+                (lower,upper) = config['freq']
+                bLow = y>=(lower-0.5)
+                bUp = y<=(upper+0.5)
+                bAll = np.all([bLow,bUp],axis=0)
+                y = y[bAll]
+                z = z[:,bAll]
+            (Y,X) = np.meshgrid(y,x)
+            Z = np.abs(z)
+            
+            widget = FFTStftWidget((X,Y,Z))
+            gl.plotManager.addNewWidget(self.name,widget)
 
 class FFTFreqWidget(QtGui.QWidget):
     def __init__(self, result):
         QtGui.QWidget.__init__(self)
 
 class FFTStftWidget(ImageWidget):
-    def __init__(self, result):
-        ImageWidget.__init__(self)
-        
-        (l,w) = result['data'].shape
-        sr = result['bandwidth']*2.56
-        ols = np.int(2*w*(1-result['overlap']/100))
-        x = (np.arange(l)*ols+w)/sr
-        y = np.fft.fftfreq(2*w,1/sr)[:w]
-        (Y,X) = np.meshgrid(y,x)
-        z = np.abs(result['data'])
-
-        itm = make.pcolor(X,Y,z)
+    def __init__(self, xyz):
+        ImageWidget.__init__(self, xlabel='Time', ylabel='Frequency',
+            xunit='s', yunit='Hz', yreverse=False, lock_aspect_ratio=False)
+        (x,y,z) = xyz
+        itm = make.pcolor(x,y,z)
         self.plot.add_item(itm)
-
         self.register_all_image_tools()
 
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar
 import matplotlib.pyplot as plt
 class FFTStftWidgetPlt(QtGui.QWidget):
-    def __init__(self, result):
+    def __init__(self, xyz):
         QtGui.QWidget.__init__(self)
 
-        (l,w) = result['data'].shape
-        sr = result['bandwidth']*2.56
-        ols = np.int(2*w*(1-result['overlap']/100))
-        x = (np.arange(l)*ols+w)/sr
-        y = np.fft.fftfreq(2*w,1/sr)[:w]
-        (Y,X) = np.meshgrid(y,x)
-        z = np.abs(result['data'])
+        (x,y,z) = xyz
 
         fig = plt.figure()
         # ax = fig.add_subplot(111)
         canvas = FigureCanvas(fig)
-        plt.pcolor(X,Y,z)
+        plt.pcolor(x,y,z)
+        plt.xlabel('Time (s)')
+        plt.ylabel('Frequency (Hz)')
+        plt.colorbar()
         nvb = NavigationToolbar(canvas, self)
         
         layout = QtGui.QVBoxLayout(self)
