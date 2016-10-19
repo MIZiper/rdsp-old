@@ -6,6 +6,8 @@ from os import path
 from guiqwt.plot import CurveWidget
 from PyQt4.QtGui import QProgressDialog
 from PyQt4.QtCore import QCoreApplication
+from PyQt4 import QtGui
+from PyQt4.QtCore import Qt
 
 """
     Read/Parse/Save Proj file
@@ -175,3 +177,89 @@ class ProgressManager():
 
     def endProgress(self):
         self.progress.accept()
+
+class DisplayRangePicker(QtGui.QDialog):
+    def __init__(self, maxFreq = None, maxTime = None):
+        QtGui.QDialog.__init__(self)
+        self.setWindowTitle('Range Picker')
+        self.maxFreq = maxFreq
+        self.maxTime = maxTime
+        self.useAll = False
+        self.initUI()
+
+    def initUI(self):
+        layout = QtGui.QVBoxLayout(self)
+
+        buttonBox = QtGui.QDialogButtonBox(
+            QtGui.QDialogButtonBox.Ok |
+            QtGui.QDialogButtonBox.Cancel
+        )
+        btnUseAll = buttonBox.addButton('All',QtGui.QDialogButtonBox.ResetRole)
+        btnUseAll.clicked.connect(self.useAllHandler)
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+
+        if self.maxTime:
+            grpTime = QtGui.QGroupBox('Time')
+            upperTime = QtGui.QSlider(Qt.Horizontal)
+            upperTime.setMaximum(self.maxTime)
+            upperTime.setValue(self.maxTime)
+            lblUpperTime = QtGui.QLabel('%d' % self.maxTime)
+            lowerTime = QtGui.QSlider(Qt.Horizontal)
+            lowerTime.setMaximum(self.maxTime)
+            lowerTime.setValue(0)
+            lblLowerTime = QtGui.QLabel('%d' % 0)
+            upperTime.valueChanged.connect(lambda x: lblUpperTime.setText('%d' % x))
+            lowerTime.valueChanged.connect(lambda x: lblLowerTime.setText('%d' % x))
+            grpTimeLayout = QtGui.QGridLayout(grpTime)
+            grpTimeLayout.addWidget(lowerTime,0,0)
+            grpTimeLayout.addWidget(upperTime,1,0)
+            grpTimeLayout.addWidget(lblLowerTime,0,1)
+            grpTimeLayout.addWidget(lblUpperTime,1,1)
+            layout.addWidget(grpTime)
+
+            self.upperTime = upperTime
+            self.lowerTime = lowerTime
+
+        if self.maxFreq:
+            grpFreq = QtGui.QGroupBox('Frequency')
+            upperFreq = QtGui.QSlider(Qt.Horizontal)
+            upperFreq.setMaximum(self.maxFreq)
+            upperFreq.setValue(self.maxFreq)
+            lblUpperFreq = QtGui.QLabel('%d' % self.maxFreq)
+            lowerFreq = QtGui.QSlider(Qt.Horizontal)
+            lowerFreq.setMaximum(self.maxFreq)
+            lowerFreq.setValue(0)
+            lblLowerFreq = QtGui.QLabel('%d' % 0)
+            upperFreq.valueChanged.connect(lambda x: lblUpperFreq.setText('%d' % x))
+            lowerFreq.valueChanged.connect(lambda x: lblLowerFreq.setText('%d' % x))
+            grpFreqLayout = QtGui.QGridLayout(grpFreq)
+            grpFreqLayout.addWidget(lowerFreq,0,0)
+            grpFreqLayout.addWidget(upperFreq,1,0)
+            grpFreqLayout.addWidget(lblLowerFreq,0,1)
+            grpFreqLayout.addWidget(lblUpperFreq,1,1)
+            layout.addWidget(grpFreq)
+            
+            self.upperFreq = upperFreq
+            self.lowerFreq = lowerFreq
+
+        layout.addWidget(buttonBox)
+
+    def useAllHandler(self):
+        self.useAll = True
+        self.accept()
+
+    def getResult(self):
+        result = {}
+        if self.maxFreq:
+            lowerFreq = self.lowerFreq.value()
+            upperFreq = self.upperFreq.value()
+            freq = (lowerFreq, upperFreq) if upperFreq>=lowerFreq else (upperFreq, lowerFreq)
+            result['freq'] = None if self.useAll else freq
+        if self.maxTime:
+            lowerTime = self.lowerTime.value()
+            upperTime = self.upperTime.value()
+            time = (lowerTime, upperTime) if upperTime>=lowerTime else (upperTime, lowerTime) 
+            result['time'] = None if self.useAll else time
+
+        return result
