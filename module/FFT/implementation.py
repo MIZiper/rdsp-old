@@ -305,7 +305,7 @@ class FFTFreqModule(object):
 
     def showStft(self):
         data = self.getData()
-        widget = FFTStftWidget(data)
+        widget = FFTStftWidgetPlt(data)
         gl.plotManager.addNewWidget(self.name,widget)
 
 class FFTFreqWidget(QtGui.QWidget):
@@ -329,6 +329,31 @@ class FFTStftWidget(ImageWidget):
 
         self.register_all_image_tools()
 
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar
+import matplotlib.pyplot as plt
+class FFTStftWidgetPlt(QtGui.QWidget):
+    def __init__(self, result):
+        QtGui.QWidget.__init__(self)
+
+        (l,w) = result['data'].shape
+        sr = result['bandwidth']*2.56
+        ols = np.int(2*w*(1-result['overlap']/100))
+        x = (np.arange(l)*ols+w)/sr
+        y = np.fft.fftfreq(2*w,1/sr)[:w]
+        (Y,X) = np.meshgrid(y,x)
+        z = np.abs(result['data'])
+
+        fig = plt.figure()
+        # ax = fig.add_subplot(111)
+        canvas = FigureCanvas(fig)
+        plt.pcolor(X,Y,z)
+        nvb = NavigationToolbar(canvas, self)
+        
+        layout = QtGui.QVBoxLayout(self)
+        layout.addWidget(nvb)
+        layout.addWidget(canvas)
+
+        canvas.draw()
 # to make test easy (show context menu of FFTFreqModule), add the following code, but needs to be removed
 # modify ModuleManager not to show every module registered
 # or simply use object's property instead of class's
