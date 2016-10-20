@@ -64,6 +64,31 @@ class ProjectManager():
         for lw in self.listWidget:
             lw.addNewSignal(signal)
 
+    # Since we're going to add various data type, count internal type in!
+    def addNewSignal(self, intSig):
+        # {'name',config:{'#date','#length'},'#guid',
+        #  'tracks':[{'name','?guid','data','config':{'bandwidth','???'}}
+        n = len(intSig['tracks'])
+        gl.progress.startNewProgress(n,'Saving tracks.')
+        tracks = []
+        i = 0
+        for track in intSig['tracks']:
+            guid = str(uuid.uuid4())
+            track['guid'] = guid
+            numpy.save(gl.projectPath,gl.SOURCEDIR,guid+gl.TRACKEXT, track['data'])
+            i += 1
+            gl.progress.setValue(i)
+        gl.progress.endProgress()
+
+        guid = str(uuid.uuid4())
+        signal = SignalModule(guid, intSig['name'], self)
+        signal.parseConfig(intSig['config'])
+        signal.fillTracks(intSig['tracks'])
+        self.signals.append(signal)
+
+        for lw in self.listWidget:
+            lw.addNewSignal(signal)
+
     def delSignal(self, signal):
         # prompt confirm
         # force save project, since file won't exist
