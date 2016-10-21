@@ -23,3 +23,9 @@ class ModuleType(IntEnum):
     config = 1  # the module has config, shows in listWidget
     process = 2 # the module is for processing, in process for signal
     all = 3
+
+from PyQt4 import QtGui
+def aw(self, w):
+    self.addWidget(w)
+    return self
+setattr(QtGui.QLayout,'aw',aw)
