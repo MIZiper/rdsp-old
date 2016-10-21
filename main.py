@@ -177,6 +177,9 @@ class MainWindow(QMainWindow):
                 module = importlib.import_module(modulePath)
                 if module.ISREADY:
                     gl.moduleManager.registerModule(module.RDSP_Module)
+                    if hasattr(module,'RDSP_Modules'):
+                        for mod in module.RDSP_Modules:
+                            gl.moduleManager.registerModule(mod)
         self.statusBar().showMessage("Done!", 3000)
 
     def plotTab_close(self, index):

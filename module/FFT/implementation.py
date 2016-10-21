@@ -367,10 +367,6 @@ class FFTStftWidgetPlt(QtGui.QWidget):
         layout.addWidget(canvas)
 
         canvas.draw()
-# to make test easy (show context menu of FFTFreqModule), add the following code, but needs to be removed
-# modify ModuleManager not to show every module registered
-# or simply use object's property instead of class's
-gl.moduleManager.registerModule(FFTFreqModule)
 
 if __name__ == '__main__':
     from guidata import qapplication
