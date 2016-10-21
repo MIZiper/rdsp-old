@@ -128,7 +128,8 @@ class ModuleManager():
 
     def registerModule(self, moduleClass):
         self.modules[moduleClass.ModuleName] = moduleClass
-        self.modulesName.append(moduleClass.ModuleName)
+        if (moduleClass.ModuleType & gl.ModuleType.process):
+            self.modulesName.append(moduleClass.ModuleName)
 
     def getModule(self, moduleClassName):
         try:
@@ -136,21 +137,8 @@ class ModuleManager():
         except:
             return None
     
-    def getModuleIndex(self, moduleClassName):
-        try:
-            return self.modulesName.index(moduleClassName)+1000
-        except:
-            return -1
-
-    def getModuleByIndex(self, index):
-        moduleName = "default"
-        try:
-            moduleName = self.modulesName[index-1000]
-        finally:
-            return self.getModule(moduleName)
-    
     def getModulesName(self):
-        return [name for name in self.modulesName if name!='Signal' and name!='Track'] #]#
+        return self.modulesName
 
 """
     Handle plot area, including graphs and tables

@@ -10,6 +10,7 @@ from guiqwt.builder import make
 
 class SignalModule():
     ModuleName = 'Signal'
+    ModuleType = gl.ModuleType.config
     ContextMenu = [
         {'title':'New Process', 'action':'newProcess'},
         # {'title':'ProcessAll', 'action':'processAll'},
@@ -109,12 +110,14 @@ class SignalModule():
             moduleClass = gl.moduleManager.getModule(item)
             guid = str(uuid.uuid4())
             o = moduleClass(guid, item, self)
-            if o.configWindow():
+            # assert o.ModuleType & gl.ModuleType.process  ~= True
+            if o.configWindow() and (o.ModuleType & gl.ModuleType.config):
                 self.process.append(o)
                 gl.projectManager.refreshListWidget()
 
 class TrackModule():
     ModuleName = 'Track'
+    ModuleType = gl.ModuleType.config
     ContextMenu = [
         {'title':'Display', 'action':'displayOverride'},
         {'title':'Display in New Window', 'action':'displayNew'},

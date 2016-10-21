@@ -9,6 +9,7 @@ from rdsp import gl
 
 class AirGapModule():
     ModuleName = "AirGap"
+    ModuleType = gl.ModuleType.all
     ContextMenu = [
         {'title':'Process', 'action':'processNow'},
         {'title':'Config', 'action':'setConfig'},

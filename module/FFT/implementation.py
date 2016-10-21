@@ -9,6 +9,7 @@ from rdsp.util import DisplayRangePicker
 
 class FFTModule(object):
     ModuleName = 'FFT'
+    ModuleType = gl.ModuleType.all
     ContextMenu = [
         {'title':'Process', 'action':'processNow'},
         {'title':'Config', 'action':'setConfig'},
@@ -256,6 +257,7 @@ class FFTConfig(QtGui.QDialog):
 
 class FFTFreqModule(object):
     ModuleName = 'FFTFreq'
+    ModuleType = gl.ModuleType.config
     ContextMenu = [
         {'title':'Show Result', 'action':'showResult'}, #FirstPhase,Average
         {'title':'Export', 'action':'export2xlsx'}, #TBDetermined
