@@ -75,7 +75,7 @@ class ProjectManager():
         for track in intSig['tracks']:
             guid = str(uuid.uuid4())
             track['guid'] = guid
-            numpy.save(gl.projectPath,gl.SOURCEDIR,guid+gl.TRACKEXT, track['data'])
+            numpy.save(path.join(gl.projectPath,gl.SOURCEDIR,guid+gl.TRACKEXT), track['data'])
             i += 1
             gl.progress.setValue(i)
         gl.progress.endProgress()
