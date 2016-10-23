@@ -101,7 +101,7 @@ class ProjectManager():
 
     def addTracks(self, tracks):
         for track in tracks:
-            numpy.save(path.join(gl.projectPath,gl.SOURCEDIR,guid+gl.TRACKEXT), track['data'])
+            numpy.save(path.join(gl.projectPath,gl.SOURCEDIR,track['guid']+gl.TRACKEXT), track['data'])
         # addNewSignal should call this function
         # and the guid of track should be gen by SignalModule
 

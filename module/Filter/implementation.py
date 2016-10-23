@@ -2,16 +2,14 @@ from PyQt4 import QtGui
 from rdsp import gl
 from scipy import signal
 import numpy as np
+from rdsp.default import FakeSignal
 
-class FilterModule(object):
+class FilterModule(FakeSignal):
     ModuleName = 'Filter'
-    ModuleType = gl.ModuleType.process
 
     def __init__(self, guid, name, parent):
-        self.guid = guid
+        FakeSignal.__init__(self, guid, name, parent)
         self.name = name+' - '+parent.name
-        self.parent = parent
-        self.config = {}
 
     def configWindow(self):
         config = {
@@ -27,7 +25,6 @@ class FilterModule(object):
 
     def processNow(self, config):
         tracks = []
-        sig = {'name':config['name'],'config':self.parent.config,'tracks':tracks}
 
         # wp, ws: pass band freq & stop band freq
         # gp, gs: maximum loss in passband & minimum attenuation in stopband (dB)
@@ -54,7 +51,7 @@ class FilterModule(object):
                 'config':t.config
             })
 
-        gl.projectManager.addNewSignal(sig)
+        self.addTracks(tracks)
         
 
 class FilterConfig(QtGui.QDialog):
