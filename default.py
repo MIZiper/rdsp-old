@@ -94,9 +94,16 @@ class SignalModule():
         }
 
     def addTracks(self, tracks):
-        self.tracks += tracks
+        ts = []
+        for track in tracks:
+            track['guid'] = str(uuid.uuid4())
+            t = TrackModule(track['guid'],track['name'],self,track['data'])
+            t.parseConfig(track['config'])
+            ts.append(t)
+        self.tracks += ts
         self.parent.addTracks(tracks)
-
+        return ts
+        
     def removeTracks(self, tracks):
         for track in tracks:
             self.tracks.remove(track)
@@ -134,13 +141,13 @@ class TrackModule():
         # ,{'title':'Detailed Display', 'action':'detailedDisplay'}
     ]
 
-    def __init__(self, guid, name, parent):
+    def __init__(self, guid, name, parent, data=None):
         self.guid = guid
         self.name = name
         self.parent = parent
-        self.data = None
+        self.data = data
         self.config = {}
-        self.dataLoaded = False
+        self.dataLoaded = data is not None
 
     def getData(self):
         if not self.dataLoaded:
@@ -275,6 +282,11 @@ class FakeSignal(SignalModule):
         self.parent.removeTracks(self.tracks)
         # the track deletion should be performed by parent, finally by projMng
 
+    def addTracks(self, tracksParam):
+        tracks = self.parent.addTracks(tracksParam)
+        self.tracks += tracks
+        return tracks
+
     # newProcess
     def getListConfig(self):
         cfg = {
@@ -288,3 +300,4 @@ class FakeSignal(SignalModule):
                 prc.getListConfig() for prc in self.process
             ]
         }
+        return cfg
