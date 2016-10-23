@@ -93,6 +93,15 @@ class SignalModule():
             "Duration":self.config['length']
         }
 
+    def addTracks(self, tracks):
+        self.tracks += tracks
+        self.parent.addTracks(tracks)
+
+    def removeTracks(self, tracks):
+        for track in tracks:
+            self.tracks.remove(track)
+        self.parent.removeTracks(tracks)
+
 # interface part over, event part start
 
     def delete(self):
@@ -216,3 +225,66 @@ class TrackModule():
                 plot.add_item(curve)
                 cs = [curve]
                 setattr(cw,'RDSP_Curves',cs)
+
+class FakeSignal(SignalModule):
+    # ModuleName
+    ModuleType = gl.ModuleType.all
+    # ContextMenu
+
+    # __init__
+    # fillTracks
+    # fillProcess
+    # getTracksList
+
+    def getTrack(self, guid):
+        return self.parent.getTrack(guid)
+    # delProcess
+    # refresh
+
+    def parseConfig(self, config):
+        self.tracks = [
+            self.parent.getTrack(guid) for guid in config['tracks']
+        ]
+        self.fillProcess(config['process'])
+    # configWindow
+    def getFileConfig(self):
+        cfg = {
+            'type':self.ModuleName,
+            'guid':self.guid,
+            'name':self.name,
+            'config':{
+                'tracks':[
+                    track.guid for track in self.tracks
+                ],
+                'process':[
+                    process.getFileConfig() for process in self.process
+                ]
+            }
+        }
+        return cfg
+    
+    def getProperty(self):
+        return {}
+
+    def delete(self):
+        for prc in self.process:
+            prc.delete()
+        for track in self.tracks:
+            track.delete()
+        self.parent.delProcess(self)
+        self.parent.removeTracks(self.tracks)
+        # the track deletion should be performed by parent, finally by projMng
+
+    # newProcess
+    def getListConfig(self):
+        cfg = {
+            'type':self.ModuleName,
+            'guid':self.guid,
+            'name':self.name,
+            'object':self,
+            'sub':[
+                track.getListConfig() for track in self.tracks
+            ] + [
+                prc.getListConfig() for prc in self.process
+            ]
+        }

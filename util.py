@@ -95,6 +95,14 @@ class ProjectManager():
         self.signals.remove(signal)
         self.refreshListWidget()
 
+    def removeTracks(self, tracks):
+        pass
+        # os.remove
+
+    def addTracks(self, tracks):
+        pass
+        # np.save
+
     def initConfig(self, data):
         self.signals.clear()
 
